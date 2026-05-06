@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
+import 'edit_profile_page.dart';
+import '../models/review_model.dart';
+import 'block_page.dart'; // adjust path to match your project structure
+
+// ═══════════════════════════════════════════════════════════════════
+//  COLORS
+// ═══════════════════════════════════════════════════════════════════
 
 class AppColors {
   static const primary = Color(0xFF2563EB);
@@ -15,6 +24,7 @@ class AppColors {
   static const gradStart = Color(0xFF1D4ED8);
   static const gradMid = Color(0xFF2563EB);
   static const gradEnd = Color(0xFF34D399);
+  static const learnColor = Color(0xFF8B5CF6);
 }
 
 class AppTextStyles {
@@ -56,282 +66,273 @@ class AppTextStyles {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  DATA
-// ═══════════════════════════════════════════════════════════════════
-
-class _ExperienceData {
-  final String title, company, date;
-  const _ExperienceData(this.title, this.company, this.date);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  SHARED WIDGETS
-// ═══════════════════════════════════════════════════════════════════
-
-class _SkillTag extends StatelessWidget {
-  final String label;
-  const _SkillTag({required this.label});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.tag,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.15)),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.caption.copyWith(
-          color: AppColors.tagText,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
 //  PROFILE PAGE
 // ═══════════════════════════════════════════════════════════════════
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
-  static const _exp = [
-    _ExperienceData("Senior Developer", "SkillBridge Tech", "2022 – Present"),
-    _ExperienceData("Mobile Lead", "AppWorld Egypt", "2019 – 2022"),
-    _ExperienceData("Junior Programmer", "Startup Hub", "2016 – 2019"),
-  ];
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          _ProfileSliverHeader(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _StatsRow(),
-                  const SizedBox(height: 24),
-                  _CardSection(
-                    title: "About",
-                    child: const Text(
-                      "Passionate Mobile Developer specializing in high-performance Flutter apps and creative video storytelling. Based in Cairo, working globally.",
-                      style: AppTextStyles.body,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _CardSection(
-                    title: "Skills",
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        "Flutter",
-                        "Dart",
-                        "Firebase",
-                        "iOS",
-                        "Android",
-                        "Video Editing",
-                        "Figma",
-                      ].map((s) => _SkillTag(label: s)).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _CardSection(
-                    title: "Experience",
-                    child: Column(
-                      children: _exp
-                          .asMap()
-                          .entries
-                          .map(
-                            (e) => _ExperienceRow(
-                              data: e.value,
-                              isLast: e.key == _exp.length - 1,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _CardSection(
-                    title: "Contact",
-                    child: Column(
-                      children: [
-                        _ContactRow(
-                          icon: Icons.email_outlined,
-                          text: "marwan.dev@example.com",
-                        ),
-                        _ContactRow(
-                          icon: Icons.phone_android_outlined,
-                          text: "+20 112 345 6789",
-                        ),
-                        _ContactRow(
-                          icon: Icons.language_outlined,
-                          text: "www.marwan-dev.com",
-                          isLast: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  PROFILE SLIVER HEADER
-// ═══════════════════════════════════════════════════════════════════
+class _ProfilePageState extends State<ProfilePage> {
+  UserModel? _user;
+  bool _loading = true;
+  String? _error;
 
-class _ProfileSliverHeader extends StatelessWidget {
+  @override
+  void initState() {
+    super.initState();
+    _fetchUser();
+  }
+
+  Future<void> _fetchUser() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      if (!mounted) return;
+      if (doc.exists) {
+        setState(() {
+          _user = UserModel.fromMap(doc.data()!);
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'User data not found.';
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to load profile: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _openEdit() async {
+    if (_user == null) return;
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => EditProfilePage(user: _user!)),
+    );
+    // If user saved changes, refresh the profile
+    if (updated == true) _fetchUser();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.gradStart, AppColors.gradMid, AppColors.gradEnd],
-            stops: [0.0, 0.5, 1.0],
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: AppTextStyles.body,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextButton(onPressed: _fetchUser, child: const Text('Retry')),
+            ],
           ),
         ),
-        child: Stack(
-          children: [
-            // Dot pattern background
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.07,
-                child: CustomPaint(painter: _DotPatternPainter()),
+      );
+    }
+
+    final user = _user!;
+    final hasPhoto = user.profilePicUrl.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: RefreshIndicator(
+        onRefresh: _fetchUser,
+        color: AppColors.primary,
+        child: CustomScrollView(
+          slivers: [
+            // ── Header ──
+            SliverToBoxAdapter(
+              child: _ProfileHeader(
+                user: user,
+                hasPhoto: hasPhoto,
+                onEditTap: _openEdit,
               ),
             ),
 
-            SafeArea(
-              child: Column(
-                children: [
-                  // ── Top bar: back + more ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _GlassBtn(icon: Icons.arrow_back_rounded),
-                        _GlassBtn(icon: Icons.more_horiz_rounded),
-                      ],
-                    ),
-                  ),
+            // ── Body ──
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _StatsRow(user: user),
+                    const SizedBox(height: 24),
 
-                  const SizedBox(height: 8),
+                    // About
+                    if (user.bio.isNotEmpty) ...[
+                      _CardSection(
+                        title: 'About',
+                        child: Text(user.bio, style: AppTextStyles.body),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
-                  // ── Avatar ──
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                    // Teach Skills
+                    _CardSection(
+                      title: 'Skills I Can Teach',
+                      titleIcon: Icons.school_outlined,
+                      titleIconColor: AppColors.primary,
+                      child: user.teachSkills.isEmpty
+                          ? _EmptySkillsHint(
+                              message: 'No teaching skills added yet',
+                              onTap: _openEdit,
+                            )
+                          : Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: user.teachSkills
+                                  .map(
+                                    (s) => _SkillTag(
+                                      label: s,
+                                      color: AppColors.primary,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
                     ),
-                    child: const CircleAvatar(
-                      radius: 46,
-                      backgroundImage: NetworkImage(
-                        "https://i.postimg.cc/z3ZzXWGc/Marwan.webp",
+                    const SizedBox(height: 16),
+
+                    // Learn Skills
+                    _CardSection(
+                      title: 'Skills I Want to Learn',
+                      titleIcon: Icons.auto_stories_outlined,
+                      titleIconColor: AppColors.learnColor,
+                      child: user.learnSkills.isEmpty
+                          ? _EmptySkillsHint(
+                              message: 'No learning goals added yet',
+                              onTap: _openEdit,
+                            )
+                          : Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: user.learnSkills
+                                  .map(
+                                    (s) => _SkillTag(
+                                      label: s,
+                                      color: AppColors.learnColor,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Contact
+                    _CardSection(
+                      title: 'Contact',
+                      child: Column(
+                        children: [
+                          _ContactRow(
+                            icon: Icons.email_outlined,
+                            text: user.email,
+                            isLast: true,
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
 
-                  const SizedBox(height: 12),
-
-                  // ── Name ──
-                  const Text(
-                    "Marwan Hussien",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      fontFamily: 'Georgia',
-                      letterSpacing: -0.3,
-                      shadows: [Shadow(color: Colors.black26, blurRadius: 8)],
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // ── Title / subtitle ──
-                  Text(
-                    "Flutter Expert & Video Editor",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.82),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ── Action Buttons Row ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Row(
-                      children: [
-                        // Edit Profile – filled white
-                        Expanded(
-                          flex: 3,
-                          child: _HeaderActionBtn(
-                            label: "Edit Profile",
-                            icon: Icons.edit_outlined,
-                            filled: true,
-                            onTap: () {},
+                    _CardSection(
+                      title: 'Privacy',
+                      titleIcon: Icons.shield_outlined,
+                      titleIconColor: AppColors.primary,
+                      child: _ContactRow(
+                        icon: Icons.block,
+                        text: 'Blocked Accounts',
+                        isLast: true,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const BlockedAccountsPage(),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        // Share – ghost outline
-                        Expanded(
-                          flex: 2,
-                          child: _HeaderActionBtn(
-                            label: "Share",
-                            icon: Icons.ios_share_outlined,
-                            filled: false,
-                            onTap: () {},
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        // Hire Me – accent green pill
-                        Expanded(
-                          flex: 3,
-                          child: _HeaderActionBtn(
-                            label: "Hire Me",
-                            icon: Icons.handshake_outlined,
-                            filled: false,
-                            accent: true,
-                            onTap: () {},
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
-                ],
+                    const SizedBox(height: 16),
+
+                    // Reviews
+                    _CardSection(
+                      title: 'My Reviews',
+                      titleIcon: Icons.star_rounded,
+                      titleIconColor: const Color(0xFFF59E0B),
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('reviews')
+                            .where('reviewedId', isEqualTo: user.uid)
+                            .orderBy('createdAt', descending: true)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final docs = snapshot.data?.docs ?? [];
+
+                          if (docs.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'No reviews yet.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textLight,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: docs.map((doc) {
+                              final review = ReviewModel.fromMap(
+                                doc.data() as Map<String, dynamic>,
+                                doc.id,
+                              );
+                              return _ReviewCard(review: review);
+                            }).toList(),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -341,7 +342,612 @@ class _ProfileSliverHeader extends StatelessWidget {
   }
 }
 
-// ── زر الهيدر بأشكال مختلفة ──
+// ═══════════════════════════════════════════════════════════════════
+//  PROFILE HEADER
+// ═══════════════════════════════════════════════════════════════════
+
+class _ProfileHeader extends StatelessWidget {
+  final UserModel user;
+  final bool hasPhoto;
+  final VoidCallback onEditTap;
+
+  const _ProfileHeader({
+    required this.user,
+    required this.hasPhoto,
+    required this.onEditTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.gradStart, AppColors.gradMid, AppColors.gradEnd],
+          stops: [0.0, 0.5, 1.0],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.07,
+              child: CustomPaint(painter: _DotPatternPainter()),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                // Top bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const _GlassBtn(icon: Icons.arrow_back_rounded),
+                      const _GlassBtn(icon: Icons.more_horiz_rounded),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Avatar
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 46,
+                    backgroundColor: Colors.white24,
+                    backgroundImage: hasPhoto
+                        ? NetworkImage(user.profilePicUrl)
+                        : null,
+                    child: !hasPhoto
+                        ? Text(
+                            user.name.isNotEmpty
+                                ? user.name[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Name
+                Text(
+                  user.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'Georgia',
+                    letterSpacing: -0.3,
+                    shadows: [Shadow(color: Colors.black26, blurRadius: 8)],
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                // Email subtitle
+                Text(
+                  user.email,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.75),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Action buttons
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _HeaderActionBtn(
+                          label: 'Edit Profile',
+                          icon: Icons.edit_outlined,
+                          filled: true,
+                          onTap: onEditTap,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 2,
+                        child: _HeaderActionBtn(
+                          label: 'Share',
+                          icon: Icons.ios_share_outlined,
+                          filled: false,
+                          onTap: () {},
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 3,
+                        child: _HeaderActionBtn(
+                          label: 'Hire Me',
+                          icon: Icons.handshake_outlined,
+                          filled: false,
+                          accent: true,
+                          onTap: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  STATS ROW
+// ═══════════════════════════════════════════════════════════════════
+
+class _StatsRow extends StatelessWidget {
+  final UserModel user;
+  const _StatsRow({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.tag,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.hub_rounded,
+                    size: 13,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${user.teachSkills.length} teaching · ${user.learnSkills.length} learning',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.tagText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.divider.withOpacity(0.6)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withOpacity(0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              _PStat(
+                value: '${user.teachSkills.length}',
+                label: 'Teaching',
+                icon: Icons.school_outlined,
+                iconColor: AppColors.primary,
+              ),
+              _VDivider(),
+              _PStat(
+                value: '${user.learnSkills.length}',
+                label: 'Learning',
+                icon: Icons.auto_stories_outlined,
+                iconColor: AppColors.learnColor,
+              ),
+              _VDivider(),
+              _PStat(
+                value: user.reviewCount > 0
+                    ? user.averageRating.toStringAsFixed(1)
+                    : '-',
+                label: 'Avg. Rating',
+                icon: Icons.star_rounded,
+                iconColor: const Color(0xFFF59E0B),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ReviewModel review;
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(review.reviewerId)
+          .get(),
+      builder: (context, snapshot) {
+        final reviewerName = snapshot.hasData && snapshot.data!.exists
+            ? (snapshot.data!.data() as Map<String, dynamic>)['name']
+                      as String? ??
+                  'Someone'
+            : 'Someone';
+        final reviewerPic = snapshot.hasData && snapshot.data!.exists
+            ? (snapshot.data!.data() as Map<String, dynamic>)['profilePicUrl']
+                      as String? ??
+                  ''
+            : '';
+
+        final hasPhoto = reviewerPic.isNotEmpty;
+        final date = review.createdAt.toDate();
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        final dateStr = '${months[date.month - 1]} ${date.day}, ${date.year}';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FF),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.tag,
+                    child: hasPhoto
+                        ? ClipOval(
+                            child: Image.network(
+                              reviewerPic,
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Text(
+                                reviewerName[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            reviewerName[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          reviewerName,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        Text(
+                          dateStr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: List.generate(5, (i) {
+                      return Icon(
+                        i < review.rating
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color: i < review.rating
+                            ? const Color(0xFFF59E0B)
+                            : AppColors.divider,
+                        size: 16,
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              if (review.text.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  review.text,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMid,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SHARED WIDGETS
+// ═══════════════════════════════════════════════════════════════════
+
+class _SkillTag extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _SkillTag({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySkillsHint extends StatelessWidget {
+  final String message;
+  final VoidCallback onTap;
+  const _EmptySkillsHint({required this.message, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.add_circle_outline,
+              size: 18,
+              color: AppColors.textLight,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textLight,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CardSection extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final IconData? titleIcon;
+  final Color? titleIconColor;
+
+  const _CardSection({
+    required this.title,
+    required this.child,
+    this.titleIcon,
+    this.titleIconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider.withOpacity(0.6)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      titleIconColor ?? AppColors.primary,
+                      AppColors.gradEnd,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 10),
+              if (titleIcon != null) ...[
+                Icon(titleIcon, size: 16, color: titleIconColor),
+                const SizedBox(width: 6),
+              ],
+              Text(title, style: AppTextStyles.titleLarge),
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final bool isLast;
+  final VoidCallback? onTap;
+
+  const _ContactRow({
+    required this.icon,
+    required this.text,
+    this.isLast = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.tag,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: AppColors.primary),
+            ),
+            const SizedBox(width: 14),
+            Text(text, style: AppTextStyles.label),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PStat extends StatelessWidget {
+  final String value, label;
+  final IconData icon;
+  final Color iconColor;
+  const _PStat({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 16, color: iconColor),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: AppTextStyles.titleLarge.copyWith(
+              color: AppColors.textDark,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: AppTextStyles.caption),
+        ],
+      ),
+    );
+  }
+}
+
+class _VDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Container(width: 1, height: 48, color: AppColors.divider);
+}
+
 class _HeaderActionBtn extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -364,9 +970,7 @@ class _HeaderActionBtn extends StatelessWidget {
         : accent
         ? const Color(0xFF34D399).withOpacity(0.22)
         : Colors.white.withOpacity(0.15);
-
     final Color fgColor = filled ? AppColors.primary : Colors.white;
-
     final Border? border = filled
         ? null
         : Border.all(
@@ -418,6 +1022,7 @@ class _HeaderActionBtn extends StatelessWidget {
 class _GlassBtn extends StatelessWidget {
   final IconData icon;
   const _GlassBtn({required this.icon});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -432,328 +1037,6 @@ class _GlassBtn extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════
-//  STATS ROW
-// ═══════════════════════════════════════════════════════════════════
-
-class _StatsRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.tag,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primary.withOpacity(0.15)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 13,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    "Cairo, Egypt",
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.tagText,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD1FAE5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF059669),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  const Text(
-                    "Available",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF065F46),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.divider.withOpacity(0.6)),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0F172A).withOpacity(0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              _PStat(
-                value: "450",
-                label: "Reviews",
-                icon: Icons.star_rounded,
-                iconColor: const Color(0xFFF59E0B),
-              ),
-              _VDivider(),
-              _PStat(
-                value: "12k",
-                label: "Followers",
-                icon: Icons.people_alt_outlined,
-                iconColor: AppColors.primary,
-              ),
-              _VDivider(),
-              _PStat(
-                value: "8 yrs",
-                label: "Experience",
-                icon: Icons.workspace_premium_outlined,
-                iconColor: const Color(0xFF8B5CF6),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PStat extends StatelessWidget {
-  final String value, label;
-  final IconData icon;
-  final Color iconColor;
-  const _PStat({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.iconColor,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(icon, size: 16, color: iconColor),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: AppTextStyles.titleLarge.copyWith(
-              color: AppColors.textDark,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(label, style: AppTextStyles.caption),
-        ],
-      ),
-    );
-  }
-}
-
-class _VDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      Container(width: 1, height: 48, color: AppColors.divider);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  CARD SECTION
-// ═══════════════════════════════════════════════════════════════════
-
-class _CardSection extends StatelessWidget {
-  final String title;
-  final Widget child;
-  const _CardSection({required this.title, required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider.withOpacity(0.6)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 18,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.gradEnd],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(title, style: AppTextStyles.titleLarge),
-            ],
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  EXPERIENCE ROW
-// ═══════════════════════════════════════════════════════════════════
-
-class _ExperienceRow extends StatelessWidget {
-  final _ExperienceData data;
-  final bool isLast;
-  const _ExperienceRow({required this.data, required this.isLast});
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.tag,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.work_outline_rounded,
-                size: 18,
-                color: AppColors.primary,
-              ),
-            ),
-            if (!isLast)
-              Container(width: 1.5, height: 24, color: AppColors.divider),
-          ],
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(data.title, style: AppTextStyles.titleMedium),
-                const SizedBox(height: 2),
-                Text(data.company, style: AppTextStyles.label),
-                const SizedBox(height: 3),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.tag,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    data.date,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.tagText,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  CONTACT ROW
-// ═══════════════════════════════════════════════════════════════════
-
-class _ContactRow extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final bool isLast;
-  const _ContactRow({
-    required this.icon,
-    required this.text,
-    this.isLast = false,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.tag,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: AppColors.primary),
-          ),
-          const SizedBox(width: 14),
-          Text(text, style: AppTextStyles.label),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  DOT PATTERN PAINTER
-// ═══════════════════════════════════════════════════════════════════
 
 class _DotPatternPainter extends CustomPainter {
   @override

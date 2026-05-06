@@ -9,6 +9,8 @@ class UserModel {
   final List<String> learnSkills;
   final String profilePicUrl;
   final Timestamp createdAt;
+  final double averageRating; // ← new
+  final int reviewCount;
 
   UserModel({
     required this.uid,
@@ -19,6 +21,8 @@ class UserModel {
     required this.learnSkills,
     required this.profilePicUrl,
     required this.createdAt,
+    this.averageRating = 0.0,
+    this.reviewCount = 0,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -31,6 +35,8 @@ class UserModel {
       learnSkills: List<String>.from(map['learnSkills'] ?? []),
       profilePicUrl: map['profilePicUrl'] ?? '',
       createdAt: map['createdAt'],
+      averageRating: (map['averageRating'] ?? 0.0).toDouble(), // ← new
+      reviewCount: map['reviewCount'] ?? 0,
     );
   }
 
@@ -44,6 +50,8 @@ class UserModel {
       'learnSkills': learnSkills,
       'profilePicUrl': profilePicUrl,
       'createdAt': createdAt,
+      'averageRating': averageRating, // ← new
+      'reviewCount': reviewCount,
     };
   }
 }

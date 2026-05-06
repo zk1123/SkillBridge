@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -71,4 +68,14 @@ class DefaultFirebaseOptions {
     storageBucket: 'skillbridge-9c999.firebasestorage.app',
     iosBundleId: 'com.skillbridge.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyCg0qpIPaCYkzswieE6RUgIRy2QynC6K_s',
+    appId: '1:227258159442:web:8ed47f36556637cdfc6a8b',
+    messagingSenderId: '227258159442',
+    projectId: 'skillbridge-9c999',
+    authDomain: 'skillbridge-9c999.firebaseapp.com',
+    storageBucket: 'skillbridge-9c999.firebasestorage.app',
+  );
+
 }

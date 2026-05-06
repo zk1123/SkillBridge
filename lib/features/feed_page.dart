@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/auth_service.dart';
+import 'login_page.dart';
 
 class AppColors {
   static const primary = Color(0xFF2563EB);
@@ -403,6 +405,21 @@ class FeedPage extends StatelessWidget {
                       _HeaderIconBtn(icon: Icons.search_rounded),
                       const SizedBox(width: 8),
                       _HeaderIconBtn(icon: Icons.tune_rounded),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          await AuthService().signOut();
+                          if (context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LoginPage(),
+                              ),
+                            );
+                          }
+                        },
+                        child: const _HeaderIconBtn(icon: Icons.logout_rounded),
+                      ),
                     ],
                   ),
                 ),

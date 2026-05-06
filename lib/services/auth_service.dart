@@ -26,6 +26,8 @@ class AuthService {
       learnSkills: [],
       profilePicUrl: '',
       createdAt: Timestamp.now(),
+      averageRating: 0.0, // ← new
+      reviewCount: 0,
     );
 
     await _db.collection('users').doc(user.uid).set(user.toMap());

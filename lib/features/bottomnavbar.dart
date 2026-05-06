@@ -4,6 +4,7 @@ import 'match_page.dart';
 import 'sessions_page.dart';
 import 'profile_page.dart';
 import 'feed_page.dart';
+import 'login_page.dart';
 
 class AppBottomNavBar extends StatefulWidget {
   const AppBottomNavBar({super.key});

@@ -16,9 +16,9 @@ class BlockModel {
   factory BlockModel.fromMap(Map<String, dynamic> map, String id) {
     return BlockModel(
       blockId: id,
-      blockerId: map['blockerId'],
-      blockedId: map['blockedId'],
-      createdAt: map['createdAt'],
+      blockerId: map['blockerId'] as String? ?? '',
+      blockedId: map['blockedId'] as String? ?? '',
+      createdAt: map['createdAt'] as Timestamp? ?? Timestamp.now(),
     );
   }
 

@@ -10,6 +10,7 @@ class ReviewModel {
   final String text;
   final String? reply;
   final Timestamp createdAt;
+  final String sessionId;
 
   ReviewModel({
     required this.reviewId,
@@ -21,6 +22,7 @@ class ReviewModel {
     required this.text,
     this.reply,
     required this.createdAt,
+    required this.sessionId,
   });
 
   factory ReviewModel.fromMap(Map<String, dynamic> map, String id) {
@@ -34,6 +36,7 @@ class ReviewModel {
       text: map['text'] ?? '',
       reply: map['reply'],
       createdAt: map['createdAt'],
+      sessionId: map['sessionId'] ?? '',
     );
   }
 
@@ -47,6 +50,7 @@ class ReviewModel {
       'text': text,
       'reply': reply,
       'createdAt': createdAt,
+      'sessionId': sessionId,
     };
   }
 }
