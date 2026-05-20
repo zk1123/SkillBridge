@@ -26,7 +26,7 @@ class AuthService {
       learnSkills: [],
       profilePicUrl: '',
       createdAt: Timestamp.now(),
-      averageRating: 0.0, // ← new
+      averageRating: 0.0,
       reviewCount: 0,
     );
 

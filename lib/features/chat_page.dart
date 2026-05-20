@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message_model.dart';
 import '../models/session_model.dart';
-import '../services/block_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORS
@@ -60,22 +59,6 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
-    // Block check — both directions
-    final blockService = BlockService();
-    final iBlockedThem = await blockService.isBlocked(widget.otherUid);
-    final theyBlockedMe = await blockService.amIBlockedBy(widget.otherUid);
-
-    if (iBlockedThem || theyBlockedMe) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You cannot send messages to this user.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     _messageController.clear();
 
     final message = MessageModel(
@@ -167,21 +150,6 @@ class _ChatPageState extends State<ChatPage> {
   // ── Schedule bottom sheet ────────────────────────────────────────
 
   Future<void> _showScheduleSheet({SessionModel? existingSession}) async {
-    // Block check — both directions
-    final blockService = BlockService();
-    final iBlockedThem = await blockService.isBlocked(widget.otherUid);
-    final theyBlockedMe = await blockService.amIBlockedBy(widget.otherUid);
-
-    if (iBlockedThem || theyBlockedMe) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You cannot schedule a session with this user.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,

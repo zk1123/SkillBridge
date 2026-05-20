@@ -57,6 +57,7 @@ class BlockService {
   }
 
   // ─── Check if another user has blocked me ─────────────────
+  // ─── Check if another user has blocked me ─────────────────
   Future<bool> amIBlockedBy(String otherUserId) async {
     final blockId = '${otherUserId}_$_currentUserId';
     final doc = await _firestore.collection('blocks').doc(blockId).get();
