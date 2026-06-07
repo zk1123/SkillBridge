@@ -63,11 +63,6 @@ class _LoginPageState extends State<LoginPage>
 
     try {
       await _authService.signIn(email: email, password: password);
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AppBottomNavBar()),
-      );
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {

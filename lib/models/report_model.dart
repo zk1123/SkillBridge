@@ -4,6 +4,8 @@ class ReportModel {
   final String reportId;
   final String reporterId;
   final String reportedId;
+  final String targetType; // 'user' | 'review'
+  final String targetId; // uid for user reports, reviewId for review reports
   final String reason;
   final String? details;
   final String status;
@@ -13,6 +15,8 @@ class ReportModel {
     required this.reportId,
     required this.reporterId,
     required this.reportedId,
+    required this.targetType,
+    required this.targetId,
     required this.reason,
     this.details,
     required this.status,
@@ -24,6 +28,8 @@ class ReportModel {
       reportId: id,
       reporterId: map['reporterId'],
       reportedId: map['reportedId'],
+      targetType: map['targetType'],
+      targetId: map['targetId'],
       reason: map['reason'],
       details: map['details'],
       status: map['status'] ?? 'pending',
@@ -35,6 +41,8 @@ class ReportModel {
     return {
       'reporterId': reporterId,
       'reportedId': reportedId,
+      'targetType': targetType,
+      'targetId': targetId,
       'reason': reason,
       'details': details,
       'status': status,

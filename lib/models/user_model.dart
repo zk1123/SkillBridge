@@ -9,7 +9,7 @@ class UserModel {
   final List<String> learnSkills;
   final String profilePicUrl;
   final Timestamp createdAt;
-  final double averageRating; // ← new
+  final double averageRating;
   final int reviewCount;
 
   UserModel({
@@ -35,7 +35,7 @@ class UserModel {
       learnSkills: List<String>.from(map['learnSkills'] ?? []),
       profilePicUrl: map['profilePicUrl'] ?? '',
       createdAt: map['createdAt'],
-      averageRating: (map['averageRating'] ?? 0.0).toDouble(), // ← new
+      averageRating: (map['averageRating'] ?? 0.0).toDouble(),
       reviewCount: map['reviewCount'] ?? 0,
     );
   }
@@ -50,7 +50,7 @@ class UserModel {
       'learnSkills': learnSkills,
       'profilePicUrl': profilePicUrl,
       'createdAt': createdAt,
-      'averageRating': averageRating, // ← new
+      'averageRating': averageRating,
       'reviewCount': reviewCount,
     };
   }

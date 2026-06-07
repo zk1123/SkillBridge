@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/message_model.dart';
 import '../models/session_model.dart';
+import 'report_sheet.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORS
@@ -257,7 +258,47 @@ class _ChatPageState extends State<ChatPage> {
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: _C.textMid),
-            onPressed: () {},
+            onPressed: () {
+              showMenu(
+                context: context,
+                position: RelativeRect.fromLTRB(
+                  MediaQuery.of(context).size.width,
+                  56,
+                  0,
+                  0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                items: [
+                  PopupMenuItem(
+                    onTap: () => showReportSheet(
+                      context,
+                      reportedId: widget.otherUid,
+                      targetType: 'user',
+                      targetId: widget.otherUid,
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.flag_outlined,
+                          color: Color(0xFFEF4444),
+                          size: 18,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Report user',
+                          style: TextStyle(
+                            color: Color(0xFFEF4444),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

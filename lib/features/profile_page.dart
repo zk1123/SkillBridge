@@ -4,7 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'edit_profile_page.dart';
 import '../models/review_model.dart';
-import 'block_page.dart'; // adjust path to match your project structure
+import 'block_page.dart';
+import 'report_sheet.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORS
@@ -711,6 +712,33 @@ class _ReviewCard extends StatelessWidget {
                         size: 16,
                       );
                     }),
+                  ),
+
+                  // After the stars Row, still inside the outer Row's children:
+                  Builder(
+                    builder: (context) {
+                      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                      if (currentUid == null ||
+                          currentUid == review.reviewerId) {
+                        return const SizedBox.shrink();
+                      }
+                      return GestureDetector(
+                        onTap: () => showReportSheet(
+                          context,
+                          reportedId: review.reviewerId,
+                          targetType: 'review',
+                          targetId: review.reviewId,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Icon(
+                            Icons.flag_outlined,
+                            size: 17,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

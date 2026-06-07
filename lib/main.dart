@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'features/login_page.dart';
 import 'features/bottomnavbar.dart';
+import 'features/admin/admin_page.dart';
 import 'providers/block_provider.dart';
+import 'config/admin_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,19 +31,66 @@ class MyApp extends StatelessWidget {
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Still connecting to Firebase
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
 
-          // User is logged in → load blocked users then go to app
           if (snapshot.hasData) {
-            Future.microtask(
-              () => context.read<BlockProvider>().loadBlockedUsers(),
+            final uid = snapshot.data!.uid;
+
+            // Admin bypasses ban check entirely
+            if (uid == kAdminUid) {
+              return const AdminPage();
+            }
+
+            // For regular users, check ban status before routing
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .get(),
+              builder: (context, userSnapshot) {
+                if (userSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                  final data =
+                      userSnapshot.data!.data() as Map<String, dynamic>;
+                  final banned = data['banned'] as bool? ?? false;
+
+                  if (banned) {
+                    // Sign out and return to login with a ban message
+                    Future.microtask(() async {
+                      await FirebaseAuth.instance.signOut();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Your account has been banned. Please contact support.',
+                          ),
+                          backgroundColor: Color(0xFFEF4444),
+                          duration: Duration(seconds: 5),
+                        ),
+                      );
+                    });
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                }
+
+                // Not banned — load blocked users and go to app
+                Future.microtask(
+                  () => context.read<BlockProvider>().loadBlockedUsers(),
+                );
+                return const AppBottomNavBar();
+              },
             );
-            return const AppBottomNavBar();
           }
 
           Future.microtask(() => context.read<BlockProvider>().clear());
