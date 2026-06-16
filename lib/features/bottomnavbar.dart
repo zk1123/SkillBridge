@@ -5,6 +5,14 @@ import 'sessions_page.dart';
 import 'profile_page.dart';
 import 'feed_page.dart';
 import 'login_page.dart';
+import 'app_drawer.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+const _kGrad = LinearGradient(
+  colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF059669)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
 
 class AppBottomNavBar extends StatefulWidget {
   const AppBottomNavBar({super.key});
@@ -12,6 +20,55 @@ class AppBottomNavBar extends StatefulWidget {
   @override
   State<AppBottomNavBar> createState() => _AppBottomNavBarState();
 }
+
+class SkillBridgeLogo extends StatelessWidget {
+  final double fontSize;
+  const SkillBridgeLogo({super.key, this.fontSize = 20});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: fontSize + 12,
+          height: fontSize + 12,
+          decoration: BoxDecoration(
+            gradient: _kGrad,
+            borderRadius: BorderRadius.circular((fontSize + 12) * 0.28),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.hub_rounded,
+            color: Colors.white,
+            size: fontSize * 0.85,
+          ),
+        ),
+        const SizedBox(width: 8),
+        ShaderMask(
+          shaderCallback: (b) => _kGrad.createShader(b),
+          child: Text(
+            'SkillBridge',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: fontSize,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final GlobalKey<ScaffoldState> appScaffoldKey = GlobalKey<ScaffoldState>();
 
 class _AppBottomNavBarState extends State<AppBottomNavBar> {
   //default page
@@ -55,6 +112,8 @@ class _AppBottomNavBarState extends State<AppBottomNavBar> {
   Widget build(BuildContext context) {
     return Scaffold(
       // The current page body
+      key: appScaffoldKey,
+      drawer: AppDrawer(activePage: _items[_currentIndex]['label'] as String),
       body: _pages[_currentIndex],
 
       // The nav bar

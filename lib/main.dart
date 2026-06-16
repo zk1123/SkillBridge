@@ -4,9 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'features/login_page.dart';
+import 'features/login_page_new.dart';
 import 'features/bottomnavbar.dart';
 import 'features/admin/admin_page.dart';
+import 'features/welcome_page.dart';
 import 'providers/block_provider.dart';
 import 'config/admin_config.dart';
 
@@ -94,7 +95,7 @@ class MyApp extends StatelessWidget {
           }
 
           Future.microtask(() => context.read<BlockProvider>().clear());
-          return const LoginPage();
+          return const WelcomePage();
         },
       ),
     );

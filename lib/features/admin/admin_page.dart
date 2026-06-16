@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/report_model.dart';
 import '../../models/review_model.dart';
 import '../../models/user_model.dart';
+import '../welcome_page.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORS
@@ -179,7 +180,16 @@ class _AdminPageState extends State<AdminPage>
           IconButton(
             icon: const Icon(Icons.logout, color: _C.danger),
             tooltip: 'Sign out',
-            onPressed: () => FirebaseAuth.instance.signOut(),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WelcomePage()),
+                  (route) => false,
+                );
+              }
+            },
           ),
         ],
         bottom: TabBar(

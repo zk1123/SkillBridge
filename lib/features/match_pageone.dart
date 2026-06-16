@@ -1,127 +1,1615 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'bottomnavbar.dart' show appScaffoldKey, SkillBridgeLogo;
+
+// ═══════════════════════════════════════════════════════════════════
+//  COLORS (standalone — no external import needed)
+// ═══════════════════════════════════════════════════════════════════
+
+class _C {
+  static const primary = Color(0xFF2563EB);
+  static const primaryDark = Color(0xFF1E40AF);
+  static const green = Color(0xFF059669);
+  static const surface = Color(0xFFFFFFFF);
+  static const background = Color(0xFFEEF2FF);
+  static const textDark = Color(0xFF0F172A);
+  static const textMid = Color(0xFF475569);
+  static const textLight = Color(0xFF94A3B8);
+  static const divider = Color(0xFFE2E8F0);
+  static const success = Color(0xFF10B981);
+  static const tag = Color(0xFFEFF6FF);
+  static const tagText = Color(0xFF3B82F6);
+  static const warning = Color(0xFFF59E0B);
+  static const warningBg = Color(0xFFFEF3C7);
+  static const gold = Color(0xFFFFD700);
+  static const goldDark = Color(0xFFB8860B);
+  static const red = Color(0xFFEF4444);
+  static const redLight = Color(0xFFFEE2E2);
+
+  static const gradStart = Color(0xFF2563EB);
+  static const gradEnd = Color(0xFF059669);
+
+  static const LinearGradient grad = LinearGradient(
+    colors: [gradStart, gradEnd],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient pageBg = LinearGradient(
+    colors: [Color(0xFFEEF2FF), Color(0xFFDBEAFE), Color(0xFFD1FAE5)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.5, 1.0],
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MODEL
+// ═══════════════════════════════════════════════════════════════════
+
+class _Person {
+  final String name, title, imageUrl, location, level, specialization, bio;
+  final double rating, pricePerHour;
+  final int reviews, experienceYears, maxSessionHours;
+  final List<String> skills;
+  final bool available, isPaid;
+
+  const _Person({
+    required this.name,
+    required this.title,
+    required this.imageUrl,
+    required this.location,
+    required this.level,
+    required this.specialization,
+    required this.bio,
+    required this.rating,
+    required this.pricePerHour,
+    required this.reviews,
+    required this.experienceYears,
+    required this.maxSessionHours,
+    required this.skills,
+    required this.available,
+    required this.isPaid,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DATA  — Learn + Teach pools
+// ═══════════════════════════════════════════════════════════════════
+
+const _learnPool = <_Person>[
+  _Person(
+    name: 'Marwan Hussien',
+    title: 'Senior Mobile Developer',
+    imageUrl: 'https://i.postimg.cc/z3ZzXWGc/Marwan.webp',
+    location: 'Cairo, Egypt',
+    level: 'Senior',
+    specialization: 'Mobile Development',
+    bio:
+        'Lead Flutter engineer with 8 yrs building production apps. Passionate about clean architecture and performance.',
+    rating: 5.0,
+    pricePerHour: 120,
+    reviews: 450,
+    experienceYears: 8,
+    maxSessionHours: 3,
+    skills: ['Flutter', 'Dart', 'Firebase', 'iOS'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Mohamed Nukbassy',
+    title: 'Senior Data Analyst',
+    imageUrl: 'https://i.postimg.cc/9f0r3cSF/Mo-nakbas.jpg',
+    location: 'Cairo, Egypt',
+    level: 'Senior',
+    specialization: 'Data Analysis',
+    bio:
+        'Expert in Python & Tableau. Helped 200+ students land data roles at top companies.',
+    rating: 4.9,
+    pricePerHour: 95,
+    reviews: 218,
+    experienceYears: 3,
+    maxSessionHours: 2,
+    skills: ['Python', 'SQL', 'Tableau', 'ML'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Sara Khalil',
+    title: 'UI/UX Designer',
+    imageUrl: 'https://i.pravatar.cc/300?img=47',
+    location: 'Alexandria, Egypt',
+    level: 'Mid',
+    specialization: 'UI/UX Design',
+    bio:
+        'Design systems enthusiast. Ex-Figma Community contributor. Makes every pixel count.',
+    rating: 4.8,
+    pricePerHour: 0,
+    reviews: 134,
+    experienceYears: 5,
+    maxSessionHours: 2,
+    skills: ['Figma', 'Sketch', 'Prototyping', 'Design Systems'],
+    available: false,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Ahmed Tarek',
+    title: 'Backend Engineer',
+    imageUrl: 'https://i.pravatar.cc/300?img=12',
+    location: 'Giza, Egypt',
+    level: 'Junior',
+    specialization: 'Backend Development',
+    bio:
+        'Node.js & PostgreSQL specialist. Loves teaching REST APIs and containerisation.',
+    rating: 4.7,
+    pricePerHour: 60,
+    reviews: 92,
+    experienceYears: 2,
+    maxSessionHours: 3,
+    skills: ['Node.js', 'PostgreSQL', 'Docker', 'AWS'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Layla Hassan',
+    title: 'AI & ML Engineer',
+    imageUrl: 'https://i.pravatar.cc/300?img=23',
+    location: 'Cairo, Egypt',
+    level: 'Mid',
+    specialization: 'Machine Learning',
+    bio:
+        'Researcher turned mentor. Specialises in NLP and computer vision with PyTorch.',
+    rating: 4.9,
+    pricePerHour: 110,
+    reviews: 176,
+    experienceYears: 4,
+    maxSessionHours: 3,
+    skills: ['Python', 'PyTorch', 'NLP', 'CV'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Daniel Osei',
+    title: 'Cloud Architect',
+    imageUrl: 'https://i.pravatar.cc/300?img=8',
+    location: 'Accra, Ghana',
+    level: 'Lead',
+    specialization: 'Cloud Computing',
+    bio:
+        'AWS & GCP certified. Designed infrastructure for 50+ startups across Africa.',
+    rating: 4.8,
+    pricePerHour: 140,
+    reviews: 203,
+    experienceYears: 7,
+    maxSessionHours: 2,
+    skills: ['AWS', 'GCP', 'Terraform', 'Kubernetes'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Sophie Martin',
+    title: 'Frontend Engineer',
+    imageUrl: 'https://i.pravatar.cc/300?img=32',
+    location: 'Paris, France',
+    level: 'Senior',
+    specialization: 'Web Development',
+    bio:
+        'React & Next.js expert. Loves accessibility and performance optimisation.',
+    rating: 4.7,
+    pricePerHour: 0,
+    reviews: 88,
+    experienceYears: 6,
+    maxSessionHours: 1,
+    skills: ['React', 'Next.js', 'TypeScript', 'CSS'],
+    available: false,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Carlos Mendez',
+    title: 'DevOps Engineer',
+    imageUrl: 'https://i.pravatar.cc/300?img=3',
+    location: 'Mexico City, Mexico',
+    level: 'Senior',
+    specialization: 'DevOps',
+    bio:
+        'CI/CD pipelines, Docker, k8s — turning chaos into smooth deployments.',
+    rating: 4.6,
+    pricePerHour: 80,
+    reviews: 115,
+    experienceYears: 5,
+    maxSessionHours: 2,
+    skills: ['Docker', 'Kubernetes', 'Jenkins', 'Linux'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Nadia Petrov',
+    title: 'iOS Developer',
+    imageUrl: 'https://i.pravatar.cc/300?img=44',
+    location: 'Moscow, Russia',
+    level: 'Senior',
+    specialization: 'Mobile Development',
+    bio: 'SwiftUI & UIKit veteran. Published 12 apps on the App Store.',
+    rating: 4.8,
+    pricePerHour: 100,
+    reviews: 159,
+    experienceYears: 7,
+    maxSessionHours: 3,
+    skills: ['Swift', 'SwiftUI', 'UIKit', 'Xcode'],
+    available: true,
+    isPaid: true,
+  ),
+  _Person(
+    name: 'Yusuf Al-Rashid',
+    title: 'Full-Stack Developer',
+    imageUrl: 'https://i.pravatar.cc/300?img=68',
+    location: 'Dubai, UAE',
+    level: 'Mid',
+    specialization: 'Web Development',
+    bio: 'MERN stack maestro. Passionate about GraphQL and real-time apps.',
+    rating: 4.5,
+    pricePerHour: 70,
+    reviews: 67,
+    experienceYears: 3,
+    maxSessionHours: 2,
+    skills: ['React', 'Node.js', 'GraphQL', 'MongoDB'],
+    available: true,
+    isPaid: true,
+  ),
+];
+
+const _teachPool = <_Person>[
+  _Person(
+    name: 'Omar Fathy',
+    title: 'CS Student',
+    imageUrl: 'https://i.pravatar.cc/300?img=14',
+    location: 'Cairo, Egypt',
+    level: 'Junior',
+    specialization: 'Mobile Development',
+    bio: 'Learning Flutter & Dart. Building my first e-commerce app.',
+    rating: 4.2,
+    pricePerHour: 0,
+    reviews: 5,
+    experienceYears: 1,
+    maxSessionHours: 2,
+    skills: ['Flutter', 'Dart', 'Git'],
+    available: true,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Nada Sherif',
+    title: 'Junior Data Analyst',
+    imageUrl: 'https://i.pravatar.cc/300?img=45',
+    location: 'Alexandria, Egypt',
+    level: 'Junior',
+    specialization: 'Data Analysis',
+    bio:
+        'Excel wizard transitioning to Python & SQL. Eager to learn visualization.',
+    rating: 4.0,
+    pricePerHour: 0,
+    reviews: 3,
+    experienceYears: 1,
+    maxSessionHours: 1,
+    skills: ['Excel', 'Python Basics', 'SQL Basics'],
+    available: true,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Hassan Ramzy',
+    title: 'Self-Taught Developer',
+    imageUrl: 'https://i.pravatar.cc/300?img=16',
+    location: 'Giza, Egypt',
+    level: 'Mid',
+    specialization: 'Backend Development',
+    bio:
+        'Built 3 small Node.js projects. Wants to master system design and Docker.',
+    rating: 4.3,
+    pricePerHour: 0,
+    reviews: 8,
+    experienceYears: 2,
+    maxSessionHours: 2,
+    skills: ['Node.js', 'Express', 'MySQL'],
+    available: true,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Dina Samir',
+    title: 'Design Student',
+    imageUrl: 'https://i.pravatar.cc/300?img=43',
+    location: 'Cairo, Egypt',
+    level: 'Junior',
+    specialization: 'UI/UX Design',
+    bio:
+        'Studying graphic design. Learning Figma to transition into product design.',
+    rating: 4.1,
+    pricePerHour: 0,
+    reviews: 4,
+    experienceYears: 1,
+    maxSessionHours: 1,
+    skills: ['Figma Basics', 'Canva', 'Illustration'],
+    available: false,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Karim Nour',
+    title: 'ML Enthusiast',
+    imageUrl: 'https://i.pravatar.cc/300?img=13',
+    location: 'Cairo, Egypt',
+    level: 'Junior',
+    specialization: 'Machine Learning',
+    bio: 'Math background, learning ML theory and Scikit-learn from scratch.',
+    rating: 4.4,
+    pricePerHour: 0,
+    reviews: 6,
+    experienceYears: 1,
+    maxSessionHours: 3,
+    skills: ['Python', 'Scikit-learn', 'NumPy'],
+    available: true,
+    isPaid: false,
+  ),
+  _Person(
+    name: 'Mona Adel',
+    title: 'Career Changer',
+    imageUrl: 'https://i.pravatar.cc/300?img=44',
+    location: 'Cairo, Egypt',
+    level: 'Junior',
+    specialization: 'Web Development',
+    bio:
+        'Marketing background. Learning React to pivot into frontend development.',
+    rating: 4.0,
+    pricePerHour: 0,
+    reviews: 2,
+    experienceYears: 1,
+    maxSessionHours: 2,
+    skills: ['HTML', 'CSS', 'React Basics'],
+    available: true,
+    isPaid: false,
+  ),
+];
+
+// Favourites store (simple in-memory set)
+final _favourites = <String>{};
+
+// ═══════════════════════════════════════════════════════════════════
+//  MATCH PAGE
+// ═══════════════════════════════════════════════════════════════════
 
 class MatchPage extends StatefulWidget {
   const MatchPage({super.key});
-
   @override
   State<MatchPage> createState() => _MatchPageState();
 }
 
 class _MatchPageState extends State<MatchPage> {
-  // 0 = "I Want to Learn", 1 = "I Want to Teach"
-  int _modeIndex = 0;
+  int _modeIndex = 0; // 0 = Learn, 1 = Teach
+  int _cardIndex = 0;
+  bool _showFilter = false;
 
-  // Bottom nav index (Match = index 1)
-  int _navIndex = 1;
+  // filter state
+  String? _filterSpec;
+  String? _filterLevel;
+  double _filterMinRating = 4.0;
+  String? _filterPricing;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.appBg,
-      // ── TOP APP BAR ──────────────────────────────
-      appBar: AppBar(
-        backgroundColor: AppColors.appBg,
-        elevation: 0,
-        titleSpacing: 0,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 13),
-          child: Icon(Icons.menu, color: AppColors.primaryBlue),
+  List<_Person> get _pool => _modeIndex == 0 ? _learnPool : _teachPool;
+
+  List<_Person> get _filtered {
+    return _pool.where((p) {
+      final matchSpec = _filterSpec == null || p.specialization == _filterSpec;
+      final matchLevel = _filterLevel == null || p.level == _filterLevel;
+      final matchRating = p.rating >= _filterMinRating;
+      final matchPricing =
+          _filterPricing == null ||
+          (_filterPricing == 'Paid' && p.isPaid) ||
+          (_filterPricing == 'Free' && !p.isPaid);
+      return matchSpec && matchLevel && matchRating && matchPricing;
+    }).toList();
+  }
+
+  _Person? get _current {
+    final f = _filtered;
+    if (f.isEmpty || _cardIndex >= f.length) return null;
+    return f[_cardIndex];
+  }
+
+  void _next() =>
+      setState(() => _cardIndex = (_cardIndex + 1).clamp(0, _filtered.length));
+  void _prev() =>
+      setState(() => _cardIndex = (_cardIndex - 1).clamp(0, _filtered.length));
+
+  void _dismiss() => _next();
+
+  void _like() {
+    final p = _current;
+    if (p == null) return;
+    _showMatchSheet(p);
+  }
+
+  void _heart() {
+    final p = _current;
+    if (p == null) return;
+    setState(() {
+      if (_favourites.contains(p.name)) {
+        _favourites.remove(p.name);
+      } else {
+        _favourites.add(p.name);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _favourites.contains(p.name)
+              ? '❤️ ${p.name} added to favourites!'
+              : '💔 ${p.name} removed from favourites.',
         ),
-        title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppColors.primaryBlue, AppColors.primaryBlue],
-          ).createShader(bounds),
-          child: Text(
-            'SkillBridge',
-            style: GoogleFonts.inter(
-              color: Colors.white, // ShaderMask overrides this color
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        actions: const [
-          Icon(Icons.search, color: AppColors.subheadline),
-          SizedBox(width: 12),
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(
-              Icons.notifications_rounded,
-              color: AppColors.subheadline,
-            ),
-          ),
-        ],
-      ),
-
-      body: Column(
-        children: [
-          const SizedBox(height: 12),
-
-          // ── MODE TOGGLE ────────────────────────────
-          _ModeToggle(
-            selected: _modeIndex,
-            onChanged: (i) => setState(() => _modeIndex = i),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ── PROFILE CARD ───────────────────────────
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _ProfileCard(),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── ACTION BUTTONS ─────────────────────────
-          const _ActionButtons(),
-
-          const SizedBox(height: 16),
-        ],
-      ),
-
-      // ── BOTTOM NAV ─────────────────────────────────
-      bottomNavigationBar: _BottomNav(
-        current: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: _C.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
-}
 
-// ─────────────────────────────────────────────
-//  MODE TOGGLE  ("I Want to Learn" / "I Want to Teach")
-// ─────────────────────────────────────────────
-class _ModeToggle extends StatelessWidget {
-  final int selected;
-  final ValueChanged<int> onChanged;
+  // ── Match / Book sheet ─────────────────────────────────────────
 
-  const _ModeToggle({required this.selected, required this.onChanged});
+  void _showMatchSheet(_Person p) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _MatchSheet(person: p, onBooked: _next),
+    );
+  }
+
+  // ── Filter bottom sheet ────────────────────────────────────────
+
+  void _openFilter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) {
+          final specs = (_modeIndex == 0 ? _learnPool : _teachPool)
+              .map((p) => p.specialization)
+              .toSet()
+              .toList();
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.80,
+            decoration: const BoxDecoration(
+              color: _C.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _C.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: _C.grad,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.tune_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Filter',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: _C.textDark,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          setS(() {
+                            _filterSpec = null;
+                            _filterLevel = null;
+                            _filterMinRating = 4.0;
+                            _filterPricing = null;
+                            _cardIndex = 0;
+                          });
+                          setState(() {});
+                        },
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: _C.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 24),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    children: [
+                      // Mode toggle inside filter
+                      _FSection(
+                        icon: Icons.compare_arrows_rounded,
+                        title: 'Mode',
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _FChip(
+                                label: '📚 Learn',
+                                selected: _modeIndex == 0,
+                                onTap: () => setS(() {
+                                  _modeIndex = 0;
+                                  _cardIndex = 0;
+                                  setState(() {});
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _FChip(
+                                label: '🎓 Teach',
+                                selected: _modeIndex == 1,
+                                onTap: () => setS(() {
+                                  _modeIndex = 1;
+                                  _cardIndex = 0;
+                                  setState(() {});
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Specialization
+                      _FSection(
+                        icon: Icons.code_rounded,
+                        title: 'Specialization',
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: specs.map((s) {
+                            final sel = _filterSpec == s;
+                            return _FChip(
+                              label: s,
+                              selected: sel,
+                              onTap: () => setS(() {
+                                _filterSpec = sel ? null : s;
+                                _cardIndex = 0;
+                                setState(() {});
+                              }),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Level
+                      _FSection(
+                        icon: Icons.workspace_premium_rounded,
+                        title: 'Level',
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: ['Junior', 'Mid', 'Senior', 'Lead'].map((
+                            l,
+                          ) {
+                            final sel = _filterLevel == l;
+                            return _FChip(
+                              label: l,
+                              selected: sel,
+                              onTap: () => setS(() {
+                                _filterLevel = sel ? null : l;
+                                _cardIndex = 0;
+                                setState(() {});
+                              }),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Rating
+                      _FSection(
+                        icon: Icons.star_rounded,
+                        title: 'Min Rating',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  color: _C.gold,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _filterMinRating.toStringAsFixed(1),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: _C.primary,
+                                  ),
+                                ),
+                                const Text(
+                                  ' and above',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _C.textMid,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SliderTheme(
+                              data: SliderThemeData(
+                                activeTrackColor: _C.primary,
+                                thumbColor: _C.primary,
+                                overlayColor: _C.primary.withOpacity(0.1),
+                                inactiveTrackColor: _C.divider,
+                              ),
+                              child: Slider(
+                                value: _filterMinRating,
+                                min: 4.0,
+                                max: 5.0,
+                                divisions: 10,
+                                onChanged: (v) => setS(() {
+                                  _filterMinRating = v;
+                                  _cardIndex = 0;
+                                  setState(() {});
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Pricing (only for Learn mode)
+                      if (_modeIndex == 0)
+                        _FSection(
+                          icon: Icons.attach_money_rounded,
+                          title: 'Session Type',
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _FChip(
+                                  label: '💰 Paid',
+                                  selected: _filterPricing == 'Paid',
+                                  onTap: () => setS(() {
+                                    _filterPricing = _filterPricing == 'Paid'
+                                        ? null
+                                        : 'Paid';
+                                    _cardIndex = 0;
+                                    setState(() {});
+                                  }),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _FChip(
+                                  label: '🆓 Free',
+                                  selected: _filterPricing == 'Free',
+                                  onTap: () => setS(() {
+                                    _filterPricing = _filterPricing == 'Free'
+                                        ? null
+                                        : 'Free';
+                                    _cardIndex = 0;
+                                    setState(() {});
+                                  }),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+                // Apply
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        gradient: _C.grad,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Show ${_filtered.length} Results',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── build ──────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final person = _current;
+    final isEmpty = person == null;
+
+    return Scaffold(
+      backgroundColor: _C.background,
+      body: Container(
+        decoration: const BoxDecoration(gradient: _C.pageBg),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              const SizedBox(height: 8),
+              _buildModeToggle(),
+              const SizedBox(height: 16),
+              Expanded(child: isEmpty ? _buildEmpty() : _buildCard(person)),
+              if (!isEmpty) _buildActions(person),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── AppBar ──────────────────────────────────────────────────────
+
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: _C.surface.withOpacity(0.9),
+        border: Border(bottom: BorderSide(color: _C.divider.withOpacity(0.5))),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => appScaffoldKey.currentState?.openDrawer(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    _C.primary.withOpacity(0.1),
+                    _C.green.withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _C.primary.withOpacity(0.2)),
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                size: 20,
+                color: _C.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const SkillBridgeLogo(fontSize: 20),
+          const Spacer(),
+          // Filter
+          GestureDetector(
+            onTap: _openFilter,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: _C.grad,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: _C.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.tune_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Favourites
+          GestureDetector(
+            onTap: _showFavourites,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _C.primary.withOpacity(0.1),
+                        _C.green.withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _C.primary.withOpacity(0.2)),
+                  ),
+                  child: const Icon(
+                    Icons.favorite_border_rounded,
+                    size: 20,
+                    color: _C.primary,
+                  ),
+                ),
+                if (_favourites.isNotEmpty)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 17,
+                      height: 17,
+                      decoration: BoxDecoration(
+                        gradient: _C.grad,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${_favourites.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFavourites() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        height: 340,
+        decoration: const BoxDecoration(
+          color: _C.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: _C.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: _C.grad,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.favorite_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Favourites (${_favourites.length})',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _C.textDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 20),
+            Expanded(
+              child: _favourites.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No favourites yet ❤️',
+                        style: TextStyle(color: _C.textLight),
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      children: _favourites.map((name) {
+                        final all = [..._learnPool, ..._teachPool];
+                        final p = all.firstWhere(
+                          (x) => x.name == name,
+                          orElse: () => _learnPool.first,
+                        );
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              p.imageUrl,
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 44,
+                                height: 44,
+                                color: _C.tag,
+                                child: const Icon(
+                                  Icons.person,
+                                  color: _C.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: _C.textDark,
+                            ),
+                          ),
+                          subtitle: Text(
+                            p.specialization,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: _C.textMid,
+                            ),
+                          ),
+                          trailing: GestureDetector(
+                            onTap: () => setState(() {
+                              _favourites.remove(name);
+                              Navigator.pop(context);
+                            }),
+                            child: const Icon(
+                              Icons.close,
+                              size: 18,
+                              color: _C.textLight,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Mode Toggle ─────────────────────────────────────────────────
+
+  Widget _buildModeToggle() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.inputBg,
+        color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: _C.divider),
       ),
       child: Row(
         children: [
-          _ToggleTab(
-            label: 'I Want to Learn',
-            isActive: selected == 0,
-            onTap: () => onChanged(0),
+          _ModeTab(
+            label: '📚 I Want to Learn',
+            isActive: _modeIndex == 0,
+            onTap: () => setState(() {
+              _modeIndex = 0;
+              _cardIndex = 0;
+            }),
           ),
-          _ToggleTab(
-            label: 'I Want to Teach',
-            isActive: selected == 1,
-            onTap: () => onChanged(1),
+          _ModeTab(
+            label: '🎓 I Want to Teach',
+            isActive: _modeIndex == 1,
+            onTap: () => setState(() {
+              _modeIndex = 1;
+              _cardIndex = 0;
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Empty state ─────────────────────────────────────────────────
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: _C.grad,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Icon(
+              Icons.people_outline_rounded,
+              size: 40,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'No more matches!',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: _C.textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Try adjusting your filters.',
+            style: TextStyle(fontSize: 14, color: _C.textMid),
+          ),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: () => setState(() {
+              _cardIndex = 0;
+            }),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: _C.grad,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Start Over',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Profile Card ────────────────────────────────────────────────
+
+  Widget _buildCard(_Person p) {
+    final isFav = _favourites.contains(p.name);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: _C.green.withOpacity(0.4), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: _C.primary.withOpacity(0.2),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Stack(
+            children: [
+              // BG gradient
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        _C.green.withOpacity(0.1),
+                        Colors.transparent,
+                        _C.primary.withOpacity(0.08),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Photo
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Image.network(
+                    p.imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: _C.tag,
+                      child: const Center(
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 80,
+                          color: _C.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Dark gradient overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
+                        Colors.black.withOpacity(0.95),
+                      ],
+                      stops: const [0.0, 0.25, 0.55, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Top badges
+              Positioned(
+                top: 16,
+                left: 16,
+                child: p.rating >= 4.9
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFB300)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.workspace_premium_rounded,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Top Rated',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+
+              // Heart (favourite) — top right
+              Positioned(
+                top: 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: _heart,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: isFav
+                          ? Colors.red.withOpacity(0.9)
+                          : Colors.black.withOpacity(0.4),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: Icon(
+                      isFav
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Content at bottom
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name + rating
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${p.name}, ${p.experienceYears + 22}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  color: _C.gold,
+                                  size: 16,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  p.rating.toStringAsFixed(1),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Text(
+                                  'RATING',
+                                  style: TextStyle(
+                                    color: _C.textLight,
+                                    fontSize: 7,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      // Location + level
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: _C.textLight,
+                            size: 13,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            p.location,
+                            style: const TextStyle(
+                              color: _C.textLight,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: _C.grad,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              p.level,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Skills
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: p.skills
+                            .map(
+                              (s) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Text(
+                                  s,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 10),
+                      // Price + session length + available
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: p.isPaid
+                                  ? _C.primary.withOpacity(0.85)
+                                  : _C.green.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              p.isPaid
+                                  ? '\$${p.pricePerHour.toInt()}/hr'
+                                  : 'FREE',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.access_time_rounded,
+                                  color: Colors.white70,
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Max ${p.maxSessionHours}h session',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (p.available) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _C.success.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.circle,
+                                    color: Colors.white,
+                                    size: 6,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Available',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Bio
+                      Text(
+                        p.bio,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.75),
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      // Card progress
+                      Text(
+                        '${_cardIndex + 1} / ${_filtered.length}',
+                        style: const TextStyle(
+                          color: _C.textLight,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Action Buttons (UI-polished: X | gradient-refresh | check) ──
+
+  Widget _buildActions(_Person p) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // ✗ Dismiss — white card circle with red icon
+          _ActionBtn(
+            onTap: _dismiss,
+            size: 56,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _C.surface,
+                border: Border.all(color: _C.divider),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.close_rounded, color: _C.red, size: 26),
+            ),
+          ),
+
+          const SizedBox(width: 24),
+
+          // 🔄 Center — large gradient circle (go back / prev)
+          _ActionBtn(
+            onTap: _cardIndex > 0 ? _prev : null,
+            size: 68,
+            child: Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [_C.gradStart, _C.gradEnd],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: _C.primary.withOpacity(0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.refresh_rounded,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 24),
+
+          // ✓ Like / Match — white card circle with green icon
+          _ActionBtn(
+            onTap: _like,
+            size: 56,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _C.surface,
+                border: Border.all(color: _C.divider),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: _C.success,
+                size: 26,
+              ),
+            ),
           ),
         ],
       ),
@@ -129,12 +1617,38 @@ class _ModeToggle extends StatelessWidget {
   }
 }
 
-class _ToggleTab extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────
+//  ACTION BUTTON WRAPPER
+// ─────────────────────────────────────────────────────────────────
+
+class _ActionBtn extends StatelessWidget {
+  final VoidCallback? onTap;
+  final Widget child;
+  final double size;
+  const _ActionBtn({
+    required this.onTap,
+    required this.child,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Opacity(opacity: onTap == null ? 0.4 : 1.0, child: child),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  MODE TAB
+// ─────────────────────────────────────────────────────────────────
+
+class _ModeTab extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
-
-  const _ToggleTab({
+  const _ModeTab({
     required this.label,
     required this.isActive,
     required this.onTap,
@@ -149,16 +1663,12 @@ class _ToggleTab extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            gradient: isActive
-                ? const LinearGradient(
-                    colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                  )
-                : null,
+            gradient: isActive ? _C.grad : null,
             borderRadius: BorderRadius.circular(26),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppColors.gradientStart.withOpacity(0.3),
+                      color: _C.primary.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -169,7 +1679,7 @@ class _ToggleTab extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isActive ? Colors.white : AppColors.subheadline,
+              color: isActive ? Colors.white : _C.textMid,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -180,169 +1690,356 @@ class _ToggleTab extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-//  PROFILE CARD
-// ─────────────────────────────────────────────
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard();
+// ─────────────────────────────────────────────────────────────────
+//  FILTER SECTION & CHIP
+// ─────────────────────────────────────────────────────────────────
+
+class _FSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget child;
+  const _FSection({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        // Dark card background — same deep navy as in the design
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(24),
-        // Subtle teal border glow matching the design's dashed outline
-        border: Border.all(color: AppColors.teal.withOpacity(0.5), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryBlue.withOpacity(0.15),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            // ── BACKGROUND GRADIENT OVERLAY ────────
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [
-                      AppColors.teal.withOpacity(0.15),
-                      Colors.transparent,
-                      AppColors.primaryBlue.withOpacity(0.1),
-                    ],
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                gradient: _C.grad,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _C.textDark,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
+    );
+  }
+}
+
+class _FChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          gradient: selected ? _C.grad : null,
+          color: selected ? null : const Color(0xFFEEF2FF),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? Colors.transparent : _C.divider),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: _C.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
                   ),
-                ),
-              ),
-            ),
+                ]
+              : [],
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected ? Colors.white : _C.textMid,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            //image
-            Positioned.fill(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Image.asset(
-                  'assets/images/mentor.jfif',
-                  fit: BoxFit.fitWidth,
-                ),
-              ),
-            ),
-            // Dark gradient overlay on top of the image
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.85),
-                      Colors.black.withOpacity(1.0),
-                    ],
-                    stops: const [0.0, 0.2, 0.5, 1.0],
-                  ),
-                ),
-              ),
-            ),
+// ─────────────────────────────────────────────────────────────────
+//  MATCH SHEET  (check availability + book)
+// ─────────────────────────────────────────────────────────────────
 
-            // ── TOP MENTOR BADGE ───────────────────
-            Positioned(
-              top: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.green,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.star, color: Colors.white, size: 12),
-                    SizedBox(width: 4),
-                    Text(
-                      'Top Mentor',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+class _MatchSheet extends StatefulWidget {
+  final _Person person;
+  final VoidCallback onBooked;
+  const _MatchSheet({required this.person, required this.onBooked});
+
+  @override
+  State<_MatchSheet> createState() => _MatchSheetState();
+}
+
+class _MatchSheetState extends State<_MatchSheet> {
+  final _msgCtrl = TextEditingController();
+  bool _available = true;
+  DateTime? _pickedDate;
+  TimeOfDay? _pickedTime;
+  int _sessionHrs = 1;
+  bool _booked = false;
+
+  @override
+  void dispose() {
+    _msgCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: _C.primary,
+            onPrimary: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (d != null) setState(() => _pickedDate = d);
+  }
+
+  Future<void> _pickTime() async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 10, minute: 0),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(
+          ctx,
+        ).copyWith(colorScheme: const ColorScheme.light(primary: _C.primary)),
+        child: child!,
+      ),
+    );
+    if (t != null) setState(() => _pickedTime = t);
+  }
+
+  String _fmt(DateTime d) {
+    const m = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${m[d.month]} ${d.day}, ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.person;
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: _booked ? _buildSuccess(p) : _buildForm(p),
+      ),
+    );
+  }
+
+  Widget _buildSuccess(_Person p) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 16),
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(gradient: _C.grad, shape: BoxShape.circle),
+          child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Session Booked! 🎉',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: _C.textDark,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Your session with ${p.name.split(' ').first} is confirmed.\nThey\'ll receive your message shortly.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 13, color: _C.textMid, height: 1.5),
+        ),
+        const SizedBox(height: 24),
+        GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+            widget.onBooked();
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              gradient: _C.grad,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(
+              child: Text(
+                'Continue Matching',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
                 ),
               ),
             ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
 
-            // ── MAIN CARD CONTENT ──────────────────
-            Padding(
-              padding: const EdgeInsets.all(20),
+  Widget _buildForm(_Person p) {
+    final canBook = _pickedDate != null && _pickedTime != null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Handle
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: _C.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Person header
+        Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                p.imageUrl,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 56,
+                  height: 56,
+                  color: _C.tag,
+                  child: const Icon(Icons.person, color: _C.primary),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Push content down, leaving room for the illustration at top
-                  const SizedBox(height: 120),
-
-                  // Name + rating row
+                  Text(
+                    p.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _C.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    p.title,
+                    style: const TextStyle(fontSize: 12, color: _C.textMid),
+                  ),
+                  const SizedBox(height: 5),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // Name & age
-                      const Expanded(
-                        child: Text(
-                          'Marcus Thorne, 29',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            height: 1.1,
-                          ),
-                        ),
-                      ),
-                      // Rating badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 8,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
+                          color: p.isPaid
+                              ? _C.primary.withOpacity(0.1)
+                              : _C.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Column(
+                        child: Text(
+                          p.isPaid ? '\$${p.pricePerHour.toInt()}/hr' : 'FREE',
+                          style: TextStyle(
+                            color: p.isPaid ? _C.primary : _C.green,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: p.available
+                              ? _C.success.withOpacity(0.1)
+                              : _C.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(
-                              Icons.star,
-                              color: Color(0xFFFBBF24),
-                              size: 16,
+                              Icons.circle,
+                              size: 6,
+                              color: p.available ? _C.success : _C.red,
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(width: 4),
                             Text(
-                              '4.9',
+                              p.available ? 'Available Now' : 'Busy',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'RATING',
-                              style: TextStyle(
-                                color: AppColors.placeholder,
-                                fontSize: 7,
-                                letterSpacing: 0.5,
+                                color: p.available ? _C.success : _C.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -350,284 +2047,233 @@ class _ProfileCard extends StatelessWidget {
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 6),
-
-                  // Location
-                  Row(
-                    children: const [
-                      Icon(
-                        Icons.location_on_outlined,
-                        color: AppColors.placeholder,
-                        size: 14,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Berlin, Germany',
-                        style: TextStyle(
-                          color: AppColors.placeholder,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Skill chips
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: const [
-                      _SkillChip(label: 'Python - Expert'),
-                      _SkillChip(label: 'React - Intermediate'),
-                      _SkillChip(label: 'Architecture - Lead'),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Mentor mode label
-                  Text(
-                    'MENTOR: NORMAL NATURAL',
-                    style: TextStyle(
-                      color: AppColors.teal,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // Bio
-                  Text(
-                    'Lead Engineer at TechScale. I specialize in building scalable distributed systems and mentoring junior devs on clean code...',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.75),
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 8),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
 
-// ─────────────────────────────────────────────
-//  SKILL CHIP
-// ─────────────────────────────────────────────
-class _SkillChip extends StatelessWidget {
-  final String label;
-  const _SkillChip({required this.label});
+        const SizedBox(height: 20),
+        Container(height: 1, color: _C.divider),
+        const SizedBox(height: 20),
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+        // Session duration
+        Align(
+          alignment: Alignment.centerLeft,
+          child: const Text(
+            'Session Duration',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _C.textDark,
+            ),
+          ),
         ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  ACTION BUTTONS  (X, refresh, heart)
-// ─────────────────────────────────────────────
-class _ActionButtons extends StatelessWidget {
-  const _ActionButtons();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Dismiss button
-        _RoundButton(
-          onTap: () {},
-          child: const Icon(Icons.close, color: AppColors.red, size: 26),
-          size: 56,
-          bgColor: AppColors.cardBg,
-          hasShadow: true,
-        ),
-
-        const SizedBox(width: 24),
-
-        // Refresh / main action — gradient
-        GestureDetector(
-          onTap: () {},
-          child: Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        const SizedBox(height: 10),
+        Row(
+          children: List.generate(p.maxSessionHours, (i) {
+            final hrs = i + 1;
+            final sel = _sessionHrs == hrs;
+            return GestureDetector(
+              onTap: () => setState(() => _sessionHrs = hrs),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  gradient: sel ? _C.grad : null,
+                  color: sel ? null : _C.background,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: sel ? Colors.transparent : _C.divider,
+                  ),
+                ),
+                child: Text(
+                  '${hrs}h',
+                  style: TextStyle(
+                    color: sel ? Colors.white : _C.textMid,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.gradientStart.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+            );
+          }),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Date
+        Align(
+          alignment: Alignment.centerLeft,
+          child: const Text(
+            'Select Date',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _C.textDark,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickDate,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _pickedDate != null ? _C.primary : _C.divider,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              color: _pickedDate != null ? _C.tag : Colors.transparent,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 16,
+                  color: _pickedDate != null ? _C.primary : _C.textLight,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _pickedDate != null ? _fmt(_pickedDate!) : 'Choose a date',
+                  style: TextStyle(
+                    color: _pickedDate != null ? _C.primary : _C.textLight,
+                    fontWeight: _pickedDate != null
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
                 ),
               ],
             ),
-            child: const Icon(Icons.refresh, color: Colors.white, size: 30),
           ),
         ),
 
-        const SizedBox(width: 24),
+        const SizedBox(height: 12),
 
-        // Like button
-        _RoundButton(
-          onTap: () {},
-          child: const Icon(Icons.check, color: AppColors.success, size: 26),
-          size: 56,
-          bgColor: AppColors.cardBg,
-          hasShadow: true,
+        // Time
+        Align(
+          alignment: Alignment.centerLeft,
+          child: const Text(
+            'Select Time',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _C.textDark,
+            ),
+          ),
         ),
-      ],
-    );
-  }
-}
-
-class _RoundButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final Widget child;
-  final double size;
-  final Color bgColor;
-  final bool hasShadow;
-
-  const _RoundButton({
-    required this.onTap,
-    required this.child,
-    required this.size,
-    required this.bgColor,
-    this.hasShadow = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
-          boxShadow: hasShadow
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickTime,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _pickedTime != null ? _C.primary : _C.divider,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              color: _pickedTime != null ? _C.tag : Colors.transparent,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.access_time_rounded,
+                  size: 16,
+                  color: _pickedTime != null ? _C.primary : _C.textLight,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _pickedTime != null
+                      ? _pickedTime!.format(context)
+                      : 'Choose a time',
+                  style: TextStyle(
+                    color: _pickedTime != null ? _C.primary : _C.textLight,
+                    fontWeight: _pickedTime != null
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
-                ]
-              : [],
+                ),
+              ],
+            ),
+          ),
         ),
-        child: Center(child: child),
-      ),
-    );
-  }
-}
 
-// ─────────────────────────────────────────────
-//  BOTTOM NAVIGATION BAR
-// ─────────────────────────────────────────────
-class _BottomNav extends StatelessWidget {
-  final int current;
-  final ValueChanged<int> onTap;
+        const SizedBox(height: 16),
 
-  const _BottomNav({required this.current, required this.onTap});
+        // Message
+        Align(
+          alignment: Alignment.centerLeft,
+          child: const Text(
+            'Your Message',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _C.textDark,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: _C.background,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _C.divider),
+          ),
+          child: TextField(
+            controller: _msgCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Introduce yourself and say what you want to learn...',
+              hintStyle: TextStyle(color: _C.textLight, fontSize: 13),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(14),
+            ),
+          ),
+        ),
 
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      _NavItem(icon: Icons.feed_outlined, label: 'Feed'),
-      _NavItem(icon: Icons.compare_arrows, label: 'Match'),
-      _NavItem(icon: Icons.calendar_today_outlined, label: 'Sessions'),
-      _NavItem(icon: Icons.chat_bubble_outline, label: 'Chat'),
-      _NavItem(icon: Icons.person_outline, label: 'Profile'),
-    ];
+        const SizedBox(height: 20),
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(
-              items.length,
-              (i) => GestureDetector(
-                onTap: () => onTap(i),
-                child: _NavButton(item: items[i], isActive: i == current),
+        // Book button
+        GestureDetector(
+          onTap: canBook ? () => setState(() => _booked = true) : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            decoration: BoxDecoration(
+              gradient: canBook ? _C.grad : null,
+              color: canBook ? null : _C.divider,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                canBook
+                    ? 'Book Session with ${p.name.split(' ').first}'
+                    : 'Pick date & time to book',
+                style: TextStyle(
+                  color: canBook ? Colors.white : _C.textLight,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _NavItem {
-  final IconData icon;
-  final String label;
-  const _NavItem({required this.icon, required this.label});
-}
-
-class _NavButton extends StatelessWidget {
-  final _NavItem item;
-  final bool isActive;
-
-  const _NavButton({required this.item, required this.isActive});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          item.icon,
-          color: isActive ? AppColors.activeIcon : AppColors.iconInactive,
-          size: 22,
-        ),
-        const SizedBox(height: 3),
-        Text(
-          item.label,
-          style: TextStyle(
-            color: isActive ? AppColors.activeIcon : AppColors.iconInactive,
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Center(
+            child: Text(
+              'Maybe Later',
+              style: TextStyle(color: _C.textLight, fontSize: 13),
+            ),
           ),
         ),
+        const SizedBox(height: 8),
       ],
     );
   }

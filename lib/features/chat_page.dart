@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/message_model.dart';
 import '../models/session_model.dart';
+import 'profile_view_page.dart';
+import 'voice_call_page.dart';
 import 'report_sheet.dart';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -48,6 +51,39 @@ class ChatPage extends StatefulWidget {
 
   @override
   State<ChatPage> createState() => _ChatPageState();
+}
+
+class _AppBarBtn extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _AppBarBtn({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
+          ),
+          child: Icon(icon, color: Colors.white, size: 19),
+        ),
+      ),
+    );
+  }
 }
 
 class _ChatPageState extends State<ChatPage> {
@@ -194,113 +230,223 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       backgroundColor: _C.bg,
-      appBar: AppBar(
-        backgroundColor: _C.surface,
-        elevation: 1,
-        shadowColor: Colors.black12,
-        surfaceTintColor: Colors.transparent,
-        leadingWidth: 40,
-        leading: IconButton(
-          icon: const Icon(Icons.add_circle_outline_rounded, color: _C.primary),
-          tooltip: 'Schedule a session',
-          onPressed: _showScheduleSheet,
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: _C.primaryLight,
-              child: hasPhoto
-                  ? ClipOval(
-                      child: Image.network(
-                        widget.profilePicUrl,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Text(
-                          widget.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: _C.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Text(
-                      widget.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: _C.primary,
-                        fontWeight: FontWeight.bold,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF059669)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                children: [
+                  // ── Back + Schedule button ────────────────────────
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+
+                  // ── Avatar ───────────────────────────────────────
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
                     ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              widget.name,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: _C.textDark,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Schedule session button
-          IconButton(
-            icon: const Icon(Icons.videocam_outlined, color: _C.primary),
-            tooltip: 'Schedule a session',
-            onPressed: _showScheduleSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.call_outlined, color: _C.primary),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: _C.textMid),
-            onPressed: () {
-              showMenu(
-                context: context,
-                position: RelativeRect.fromLTRB(
-                  MediaQuery.of(context).size.width,
-                  56,
-                  0,
-                  0,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                items: [
-                  PopupMenuItem(
-                    onTap: () => showReportSheet(
-                      context,
-                      reportedId: widget.otherUid,
-                      targetType: 'user',
-                      targetId: widget.otherUid,
+                    padding: const EdgeInsets.all(2.5),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      padding: const EdgeInsets.all(1.5),
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: const Color(0xFFEEF2FF),
+                        child: hasPhoto
+                            ? ClipOval(
+                                child: Image.network(
+                                  widget.profilePicUrl,
+                                  width: 36,
+                                  height: 36,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Text(
+                                    widget.name[0].toUpperCase(),
+                                    style: GoogleFonts.inter(
+                                      color: const Color(0xFF2563EB),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                widget.name[0].toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF2563EB),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                      ),
                     ),
-                    child: const Row(
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  // ── Name + online hint ────────────────────────────
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.flag_outlined,
-                          color: Color(0xFFEF4444),
-                          size: 18,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Report user',
-                          style: TextStyle(
-                            color: Color(0xFFEF4444),
-                            fontWeight: FontWeight.w600,
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ViewProfilePage(uid: widget.otherUid),
+                            ),
                           ),
+                          child: Text(
+                            widget.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF34D399),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'SkillBridge peer',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withOpacity(0.75),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+
+                  // ── Schedule session ─────────────────────────────
+                  _AppBarBtn(
+                    icon: Icons.add_circle_rounded,
+                    tooltip: 'Schedule a session',
+                    onTap: _showScheduleSheet,
+                  ),
+
+                  // ── Voice call ───────────────────────────────────
+                  _AppBarBtn(
+                    icon: Icons.call_rounded,
+                    tooltip: 'Voice call',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VoiceCallPage(
+                          personName: widget.name,
+                          personImage: widget.profilePicUrl.isNotEmpty
+                              ? widget.profilePicUrl
+                              : null,
+                          avatarText: widget.name.isNotEmpty
+                              ? widget.name[0].toUpperCase()
+                              : '?',
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ── Video call ───────────────────────────────────
+                  _AppBarBtn(
+                    icon: Icons.videocam_rounded,
+                    tooltip: 'Schedule a session',
+                    onTap: _showScheduleSheet,
+                  ),
+
+                  // ── More menu — untouched ────────────────────────
+                  IconButton(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: Colors.white.withOpacity(0.85),
+                      size: 22,
+                    ),
+                    onPressed: () {
+                      showMenu(
+                        context: context,
+                        position: RelativeRect.fromLTRB(
+                          MediaQuery.of(context).size.width,
+                          56,
+                          0,
+                          0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        items: [
+                          PopupMenuItem(
+                            onTap: () => showReportSheet(
+                              context,
+                              reportedId: widget.otherUid,
+                              targetType: 'user',
+                              targetId: widget.otherUid,
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.flag_outlined,
+                                  color: Color(0xFFEF4444),
+                                  size: 18,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Report user',
+                                  style: TextStyle(
+                                    color: Color(0xFFEF4444),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
-        ],
+        ),
       ),
       body: Column(
         children: [

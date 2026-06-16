@@ -1,51 +1,115 @@
 import 'package:flutter/material.dart';
+import 'bottomnavbar.dart' show appScaffoldKey, SkillBridgeLogo;
 
-class SkillBridgeAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final bool showBack;
-  final VoidCallback? onBack;
+class SkillBridgeAppBar extends StatelessWidget {
+  final List<Widget> actions;
 
-  const SkillBridgeAppBar({super.key, this.showBack = false, this.onBack});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(60);
+  const SkillBridgeAppBar({super.key, this.actions = const []});
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      backgroundColor: const Color(0xFFF5F5F5),
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      title: Row(
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        border: Border(
+          bottom: BorderSide(color: const Color(0xFFE2E8F0).withOpacity(0.5)),
+        ),
+      ),
+      child: Row(
         children: [
-          const Icon(Icons.menu, color: Colors.black87, size: 26),
-          const SizedBox(width: 10),
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFF3953E8), Color(0xFF3AAFA9)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ).createShader(bounds),
-            child: const Text(
-              'SkillBridge',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+          // ── Burger menu ──
+          GestureDetector(
+            onTap: () => appScaffoldKey.currentState?.openDrawer(),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF2563EB).withOpacity(0.1),
+                    const Color(0xFF059669).withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(
+                  color: const Color(0xFF2563EB).withOpacity(0.2),
+                ),
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                size: 20,
+                color: Color(0xFF2563EB),
               ),
             ),
           ),
+          const SizedBox(width: 12),
+          const SkillBridgeLogo(fontSize: 22),
+          const Spacer(),
+          ...actions,
         ],
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search, color: Colors.black87),
-          onPressed: () {},
+    );
+  }
+}
+
+// ── Reusable icon button used in action lists ──
+class AppBarIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isPrimary; // true = gradient fill, false = ghost style
+
+  const AppBarIconBtn({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.isPrimary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          gradient: isPrimary
+              ? const LinearGradient(
+                  colors: [
+                    Color(0xFF1E40AF),
+                    Color(0xFF2563EB),
+                    Color(0xFF059669),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    const Color(0xFF2563EB).withOpacity(0.1),
+                    const Color(0xFF059669).withOpacity(0.1),
+                  ],
+                ),
+          borderRadius: BorderRadius.circular(13),
+          border: isPrimary
+              ? null
+              : Border.all(color: const Color(0xFF2563EB).withOpacity(0.2)),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [],
         ),
-        IconButton(
-          icon: const Icon(Icons.person_outline, color: Colors.black87),
-          onPressed: () {},
+        child: Icon(
+          icon,
+          size: 20,
+          color: isPrimary ? Colors.white : const Color(0xFF2563EB),
         ),
-      ],
+      ),
     );
   }
 }

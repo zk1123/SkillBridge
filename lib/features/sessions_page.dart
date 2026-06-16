@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/session_model.dart';
 import '../models/review_model.dart';
 import 'chat_page.dart';
+import 'live_invite_controller.dart';
+import 'live_invite_sheet.dart';
+import 'create_live_session_sheet.dart';
 import 'profile_view_page.dart';
+import 'app_bar.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORS
@@ -30,6 +35,47 @@ class _C {
   static const star = Color(0xFFF59E0B);
 }
 
+class AppColors {
+  static const primary = Color(0xFF2563EB);
+  static const primaryDark = Color(0xFF1E40AF);
+  static const green = Color(0xFF059669);
+  static const surface = Color(0xFFFFFFFF);
+  static const background = Color(0xFFEEF2FF);
+  static const card = Color(0xFFFFFFFF);
+  static const textDark = Color(0xFF0F172A);
+  static const textMid = Color(0xFF475569);
+  static const textLight = Color(0xFF94A3B8);
+  static const divider = Color(0xFFE2E8F0);
+  static const success = Color(0xFF10B981);
+  static const successBg = Color(0xFFD1FAE5);
+  static const tag = Color(0xFFEFF6FF);
+  static const tagText = Color(0xFF3B82F6);
+  static const warning = Color(0xFFF59E0B);
+  static const warningBg = Color(0xFFFEF3C7);
+  static const danger = Color(0xFFEF4444);
+  static const dangerBg = Color(0xFFFEE2E2);
+  static const purple = Color(0xFF7C3AED);
+}
+
+class AppGradients {
+  static const pageBackground = LinearGradient(
+    colors: [Color(0xFFEEF2FF), Color(0xFFDBEAFE), Color(0xFFD1FAE5)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.5, 1.0],
+  );
+  static const primary = LinearGradient(
+    colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF059669)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const live = LinearGradient(
+    colors: [Color(0xFF059669), Color(0xFF10B981)],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  SESSIONS PAGE
 // ═══════════════════════════════════════════════════════════════════
@@ -44,7 +90,8 @@ class SessionsPage extends StatefulWidget {
 class _SessionsPageState extends State<SessionsPage> {
   bool _showUpcoming = true;
   final String _currentUid = FirebaseAuth.instance.currentUser!.uid;
-
+  bool _showSearch = false;
+  String _searchQuery = '';
   // ── Resolve other user's profile from a session ─────────────────
 
   Future<Map<String, dynamic>?> _resolveOtherUser(SessionModel session) async {
@@ -144,44 +191,81 @@ class _SessionsPageState extends State<SessionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _C.bgMain,
-      appBar: AppBar(
-        backgroundColor: _C.bgCard,
-        elevation: 0,
-        leading: const Icon(Icons.menu, color: _C.textPrimary),
-        title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [_C.logoBlue, _C.logoTeal],
-          ).createShader(bounds),
-          child: const Text(
-            'SkillBridge',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-          ),
-        ),
-        actions: const [
-          Icon(Icons.search, color: _C.textPrimary),
-          SizedBox(width: 12),
-          Icon(Icons.person_outline, color: _C.textPrimary),
-          SizedBox(width: 12),
-        ],
-      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ──────────────────────────────────────────────
-          Container(
-            color: _C.bgCard,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: const Text(
-              'My Sessions',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: _C.textPrimary,
+          SkillBridgeAppBar(
+            actions: [
+              AppBarIconBtn(
+                icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
+                onTap: () => setState(() {
+                  _showSearch = !_showSearch;
+                  if (!_showSearch) _searchQuery = '';
+                }),
               ),
+            ],
+          ),
+          if (_showSearch)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: TextField(
+                autofocus: true,
+                onChanged: (val) =>
+                    setState(() => _searchQuery = val.toLowerCase()),
+                decoration: InputDecoration(
+                  hintText: 'Search by name...',
+                  hintStyle: const TextStyle(
+                    color: _C.textSecondary,
+                    fontSize: 13,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: _C.textSecondary,
+                    size: 18,
+                  ),
+                  filled: true,
+                  fillColor: _C.bgInput,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          // ── Header ──────────────────────────────────────────────
+          // ── Header ──
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF1E40AF),
+                  Color(0xFF2563EB),
+                  Color(0xFF059669),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'My Sessions',
+                  style: GoogleFonts.inter(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // counts row — wire these to your actual stream counts
+                // for now using the tab state you already have
+              ],
             ),
           ),
 
@@ -190,15 +274,19 @@ class _SessionsPageState extends State<SessionsPage> {
             color: _C.bgCard,
             child: Row(
               children: [
-                _Tab(
-                  label: 'Upcoming',
-                  isActive: _showUpcoming,
-                  onTap: () => setState(() => _showUpcoming = true),
+                Expanded(
+                  child: _Tab(
+                    label: 'Upcoming',
+                    isActive: _showUpcoming,
+                    onTap: () => setState(() => _showUpcoming = true),
+                  ),
                 ),
-                _Tab(
-                  label: 'Past',
-                  isActive: !_showUpcoming,
-                  onTap: () => setState(() => _showUpcoming = false),
+                Expanded(
+                  child: _Tab(
+                    label: 'Past',
+                    isActive: !_showUpcoming,
+                    onTap: () => setState(() => _showUpcoming = false),
+                  ),
                 ),
               ],
             ),
@@ -212,7 +300,11 @@ class _SessionsPageState extends State<SessionsPage> {
               _showUpcoming
                   ? 'Manage your upcoming peer-to-peer learning exchanges.'
                   : 'Your completed and cancelled sessions.',
-              style: const TextStyle(color: _C.textSecondary, fontSize: 13),
+              style: const TextStyle(
+                color: Color.fromARGB(255, 48, 51, 57),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
 
@@ -223,6 +315,7 @@ class _SessionsPageState extends State<SessionsPage> {
             child: _SessionList(
               currentUid: _currentUid,
               showUpcoming: _showUpcoming,
+              searchQuery: _searchQuery,
               resolveOtherUser: _resolveOtherUser,
               onAccept: _acceptSession,
               onCancel: _cancelSession,
@@ -249,7 +342,8 @@ class _SessionList extends StatelessWidget {
   final Future<void> Function(String) onCancel;
   final Future<void> Function(String) onDecline;
   final void Function(String, String, String, String) onMessage;
-  final void Function(SessionModel, String, String) onReview; // ← new
+  final void Function(SessionModel, String, String) onReview;
+  final String searchQuery; // ← new
 
   const _SessionList({
     required this.currentUid,
@@ -259,7 +353,8 @@ class _SessionList extends StatelessWidget {
     required this.onCancel,
     required this.onDecline,
     required this.onMessage,
-    required this.onReview, // ← new
+    required this.onReview,
+    required this.searchQuery,
   });
 
   List<String> get _statusFilter => showUpcoming
@@ -373,7 +468,41 @@ class _SessionList extends StatelessWidget {
         );
       }
     }
-    return results;
+    if (searchQuery.isEmpty) return results;
+    return results
+        .where((r) => r.otherName.toLowerCase().contains(searchQuery))
+        .toList();
+  }
+}
+
+//__________________________________________________
+//               COUNT PILL
+//__________________________________________________
+
+class _CountPill extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _CountPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Roboto',
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 }
 
@@ -391,7 +520,7 @@ class _SessionCard extends StatelessWidget {
   final Future<void> Function(String) onCancel;
   final Future<void> Function(String) onDecline;
   final void Function(String, String, String, String) onMessage;
-  final void Function(SessionModel, String, String) onReview; // ← new
+  final void Function(SessionModel, String, String) onReview;
 
   const _SessionCard({
     required this.session,
@@ -403,7 +532,7 @@ class _SessionCard extends StatelessWidget {
     required this.onCancel,
     required this.onDecline,
     required this.onMessage,
-    required this.onReview, // ← new
+    required this.onReview,
   });
 
   bool get _isTeaching => session.teacherId == currentUid;
@@ -413,28 +542,40 @@ class _SessionCard extends StatelessWidget {
   bool get _isCompleted => session.status == 'completed';
   bool get _isCancelled => session.status == 'cancelled';
 
+  static const _gradPrimary = LinearGradient(
+    colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF059669)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   @override
   Widget build(BuildContext context) {
     final scheduledDate = session.scheduledAt.toDate();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: _C.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _C.border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _isConfirmed
+              ? const Color(0xFF2563EB).withOpacity(0.18)
+              : _isPending
+              ? const Color(0xFFD97706).withOpacity(0.2)
+              : _C.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Name & status ──
+          // ── Name & status ──────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -447,40 +588,72 @@ class _SessionCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFFD4E3FF),
-                      child: otherProfilePicUrl.isNotEmpty
-                          ? ClipOval(
-                              child: Image.network(
-                                otherProfilePicUrl,
-                                width: 40,
-                                height: 40,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Text(
-                                  otherName[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Color(0xFF2976C7),
-                                    fontWeight: FontWeight.bold,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: _gradPrimary,
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFFD4E3FF),
+                        child: otherProfilePicUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  otherProfilePicUrl,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Text(
+                                    otherName[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      fontFamily: 'Roboto',
+                                      color: Color(0xFF2976C7),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
+                              )
+                            : Text(
+                                otherName[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontFamily: 'Roboto',
+                                  color: Color(0xFF2976C7),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
-                            )
-                          : Text(
-                              otherName[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: Color(0xFF2976C7),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      otherName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: _C.textPrimary,
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          otherName,
+                          style: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          session.topic,
+                          style: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 12,
+                            color: Color(0xFF475569),
+                            fontWeight: FontWeight.w400,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -489,55 +662,115 @@ class _SessionCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
+          Container(height: 1, color: _C.border),
+          const SizedBox(height: 14),
 
-          // ── Role + topic ──
+          // ── Role chip ──────────────────────────────────────────
+          _RoleChip(isTeaching: _isTeaching),
+
+          const SizedBox(height: 12),
+
+          // ── Date & duration ────────────────────────────────────
           Row(
             children: [
-              _RoleChip(isTeaching: _isTeaching),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  session.topic,
-                  style: const TextStyle(color: _C.textSecondary, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_rounded,
+                      size: 13,
+                      color: Color(0xFF2563EB),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _formatDate(scheduledDate),
+                      style: const TextStyle(
+                        fontFamily: 'Roboto',
+                        color: Color(0xFF1E40AF),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // ── Date & duration ──
-          Row(
-            children: [
-              const Icon(
-                Icons.calendar_today,
-                size: 13,
-                color: _C.textSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _formatDate(scheduledDate),
-                style: const TextStyle(color: _C.textSecondary, fontSize: 12),
-              ),
-              const SizedBox(width: 12),
-              const Icon(
-                Icons.timer_outlined,
-                size: 13,
-                color: _C.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${session.durationMinutes} min',
-                style: const TextStyle(color: _C.textSecondary, fontSize: 12),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 13,
+                      color: Color(0xFF2563EB),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${session.durationMinutes} min',
+                      style: const TextStyle(
+                        fontFamily: 'Roboto',
+                        color: Color(0xFF1E40AF),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
 
           const SizedBox(height: 12),
 
-          // ── Actions ──
+          // ── Payment snackbar ───────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDBEAFE),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF93C5FD)),
+            ),
+            child: Row(
+              children: const [
+                Icon(
+                  Icons.account_balance_wallet_rounded,
+                  size: 14,
+                  color: Color(0xFF1D4ED8),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Paid 0 EGP From Wallet',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Actions ───────────────────────────────────────────
           _buildActions(context),
         ],
       ),
@@ -545,7 +778,6 @@ class _SessionCard extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context) {
-    // ── ONLY CHANGE IN THIS METHOD: completed case ──
     if (_isCompleted) {
       return _CompletedActions(
         sessionId: session.sessionId,
@@ -555,37 +787,53 @@ class _SessionCard extends StatelessWidget {
     }
 
     if (_isCancelled) {
-      return const Text(
-        'Session cancelled',
-        style: TextStyle(
-          fontSize: 12,
-          color: _C.textSecondary,
-          fontWeight: FontWeight.w600,
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEE2E2),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cancel_outlined, size: 14, color: Color(0xFFEF4444)),
+            SizedBox(width: 6),
+            Text(
+              'Session cancelled',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 13,
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    // Confirmed session
     if (_isConfirmed) {
       return Row(
         children: [
-          _ActionBtn(
-            label: 'Message',
-            bg: _C.primary,
-            textColor: Colors.white,
-            icon: Icons.message_outlined,
-            onTap: () => onMessage(
-              otherUid,
-              otherName,
-              otherProfilePicUrl,
-              session.matchId,
+          Expanded(
+            child: _ActionBtn(
+              label: 'Message',
+              gradient: _gradPrimary,
+              textColor: Colors.white,
+              icon: Icons.message_rounded,
+              onTap: () => onMessage(
+                otherUid,
+                otherName,
+                otherProfilePicUrl,
+                session.matchId,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           _ActionBtn(
             label: 'Cancel',
-            bg: _C.bgInput,
-            textColor: _C.danger,
+            bg: const Color(0xFFFEE2E2),
+            textColor: Color(0xFFEF4444),
             icon: Icons.close_rounded,
             onTap: () => _confirmCancel(context),
           ),
@@ -593,16 +841,17 @@ class _SessionCard extends StatelessWidget {
       );
     }
 
-    // Pending — my turn to respond
     if (_isPending && _isMyTurn) {
       return Row(
         children: [
-          _ActionBtn(
-            label: 'Accept',
-            bg: _C.success,
-            textColor: Colors.white,
-            icon: Icons.check_rounded,
-            onTap: () => onAccept(session.sessionId),
+          Expanded(
+            child: _ActionBtn(
+              label: 'Accept',
+              bg: const Color(0xFFD1FAE5),
+              textColor: Color(0xFF065F46),
+              icon: Icons.check_circle_outline_rounded,
+              onTap: () => onAccept(session.sessionId),
+            ),
           ),
           const SizedBox(width: 8),
           _ActionBtn(
@@ -620,8 +869,8 @@ class _SessionCard extends StatelessWidget {
           const SizedBox(width: 8),
           _ActionBtn(
             label: 'Decline',
-            bg: _C.bgInput,
-            textColor: _C.danger,
+            bg: const Color(0xFFFEE2E2),
+            textColor: Color(0xFFEF4444),
             icon: Icons.close_rounded,
             onTap: () => onDecline(session.sessionId),
           ),
@@ -629,27 +878,28 @@ class _SessionCard extends StatelessWidget {
       );
     }
 
-    // Pending — waiting for other person
     if (_isPending && !_isMyTurn) {
       return Row(
         children: [
-          _ActionBtn(
-            label: 'Message',
-            bg: _C.bgInput,
-            textColor: _C.textPrimary,
-            icon: Icons.message_outlined,
-            onTap: () => onMessage(
-              otherUid,
-              otherName,
-              otherProfilePicUrl,
-              session.matchId,
+          Expanded(
+            child: _ActionBtn(
+              label: 'Message',
+              gradient: _gradPrimary,
+              textColor: Colors.white,
+              icon: Icons.message_rounded,
+              onTap: () => onMessage(
+                otherUid,
+                otherName,
+                otherProfilePicUrl,
+                session.matchId,
+              ),
             ),
           ),
           const SizedBox(width: 8),
           _ActionBtn(
             label: 'Cancel',
-            bg: _C.bgInput,
-            textColor: _C.danger,
+            bg: const Color(0xFFFEE2E2),
+            textColor: Color(0xFFEF4444),
             icon: Icons.close_rounded,
             onTap: () => _confirmCancel(context),
           ),
@@ -667,16 +917,28 @@ class _SessionCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Cancel session?',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontWeight: FontWeight.w800,
+            fontSize: 17,
+          ),
         ),
         content: const Text(
           'This will cancel the session. This action cannot be undone.',
-          style: TextStyle(color: _C.textSecondary),
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            color: _C.textSecondary,
+            fontSize: 14,
+            height: 1.5,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Keep it'),
+            child: const Text(
+              'Keep it',
+              style: TextStyle(fontFamily: 'Roboto', color: _C.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -685,7 +947,11 @@ class _SessionCard extends StatelessWidget {
             },
             child: const Text(
               'Cancel session',
-              style: TextStyle(color: _C.danger),
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -1107,14 +1373,16 @@ class _RoleChip extends StatelessWidget {
 
 class _ActionBtn extends StatelessWidget {
   final String label;
-  final Color bg;
+  final Color? bg;
+  final LinearGradient? gradient;
   final Color textColor;
   final IconData icon;
   final VoidCallback onTap;
 
   const _ActionBtn({
     required this.label,
-    required this.bg,
+    this.bg,
+    this.gradient,
     required this.textColor,
     required this.icon,
     required this.onTap,
@@ -1125,22 +1393,33 @@ class _ActionBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(20),
+          color: gradient == null ? bg : null,
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: gradient != null
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: textColor),
-            const SizedBox(width: 4),
+            Icon(icon, size: 14, color: textColor),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
+                fontFamily: 'Roboto',
                 color: textColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -1172,9 +1451,13 @@ class _Tab extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
-                color: isActive ? _C.primary : _C.textSecondary,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                color: isActive
+                    ? const Color.fromARGB(255, 69, 86, 241)
+                    : const Color.fromARGB(255, 77, 86, 103),
+                fontWeight: isActive ? FontWeight.bold : FontWeight.bold,
+                fontSize: 16,
               ),
             ),
             const SizedBox(height: 8),
