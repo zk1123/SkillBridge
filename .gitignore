@@ -47,3 +47,5 @@ app.*.map.json
 
 #admin config
 /lib/config/admin_config.dart
+
+.env
