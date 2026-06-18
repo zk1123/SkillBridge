@@ -1,6 +1,7 @@
 // lib/screens/ai_chat_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -25,7 +26,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   void _initChat() {
     final model = GenerativeModel(
       model: 'gemini-2.5-flash',
-      apiKey: 'AIzaSyBdqmQIxUjemEefdO1ghq3yrZh8D4m6Z1o',
+      apiKey: dotenv.env['GEMINI_API_KEY']!,
       systemInstruction: Content.system(
         'أنت مساعد ذكاء اصطناعي في تطبيق SkillBridge، منصة لتبادل المهارات بين الأشخاص. '
         'ساعد المستخدمين في تعلم مهارات جديدة، تحسين مهاراتهم الحالية، والتواصل مع الآخرين. '
