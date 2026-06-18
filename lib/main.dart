@@ -10,9 +10,11 @@ import 'features/admin/admin_page.dart';
 import 'features/welcome_page.dart';
 import 'providers/block_provider.dart';
 import 'config/admin_config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     ChangeNotifierProvider(

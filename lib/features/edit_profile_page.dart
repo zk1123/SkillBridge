@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart'; // Import kIsWeb
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import 'app_skills.dart';
 
@@ -24,6 +28,13 @@ class _C {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  CLOUDINARY CONFIG
+// ═══════════════════════════════════════════════════════════════════
+
+const _cloudinaryCloudName = 'dbca70ldz';
+const _cloudinaryUploadPreset = 'SkillBridgeUploads';
+
+// ═══════════════════════════════════════════════════════════════════
 //  EDIT PROFILE PAGE
 // ═══════════════════════════════════════════════════════════════════
 
@@ -42,6 +53,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late List<String> _learnSkills;
   bool _isSaving = false;
 
+  // ── Photo state (Switched to XFile and added memory bytes for Web) ──
+  XFile? _pickedImage;
+  Uint8List? _webImageBytes;
+  bool _isUploadingPhoto = false;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +72,83 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameCtrl.dispose();
     _bioCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Pick image from gallery ──
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 512,
+      maxHeight: 512,
+    );
+    if (picked == null) return;
+
+    // Handle cross-platform states natively
+    if (kIsWeb) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _pickedImage = picked;
+        _webImageBytes = bytes;
+        _isUploadingPhoto = true;
+      });
+    } else {
+      setState(() {
+        _pickedImage = picked;
+        _isUploadingPhoto = true;
+      });
+    }
+
+    try {
+      final url = await _uploadToCloudinary(_pickedImage!);
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'profilePicUrl': url,
+      });
+      if (!mounted) return;
+      _snack('Profile photo updated ✓');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pickedImage = null;
+        _webImageBytes = null;
+      });
+      _snack('Photo upload failed: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  // ── Upload to Cloudinary ──
+  Future<String> _uploadToCloudinary(XFile image) async {
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$_cloudinaryCloudName/image/upload',
+    );
+
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = _cloudinaryUploadPreset;
+
+    // Direct multi-part handling without relying on device file paths
+    if (kIsWeb && _webImageBytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          _webImageBytes!,
+          filename: image.name,
+        ),
+      );
+    } else {
+      request.files.add(await http.MultipartFile.fromPath('file', image.path));
+    }
+
+    final response = await request.send();
+    if (response.statusCode != 200) {
+      throw Exception('Cloudinary error ${response.statusCode}');
+    }
+    final body = await response.stream.bytesToString();
+    final json = jsonDecode(body);
+    return json['secure_url'] as String;
   }
 
   Future<void> _save() async {
@@ -75,7 +168,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       });
       if (!mounted) return;
       _snack('Profile updated ✓');
-      Navigator.pop(context, true); // true = data changed
+      Navigator.pop(context, true);
     } catch (e) {
       _snack('Failed to save: $e', isError: true);
     } finally {
@@ -108,6 +201,111 @@ class _EditProfilePageState extends State<EditProfilePage> {
         title: title,
         selected: List<String>.from(selected),
         onDone: onDone,
+      ),
+    );
+  }
+
+  // ── Avatar widget ──
+  Widget _buildAvatar() {
+    final currentPhotoUrl = widget.user.profilePicUrl;
+    return Center(
+      child: Stack(
+        children: [
+          // Avatar circle
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: _C.primary.withOpacity(0.2), width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: _C.primary.withOpacity(0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: _webImageBytes != null
+                  ? Image.memory(_webImageBytes!, fit: BoxFit.cover)
+                  : (currentPhotoUrl != null && currentPhotoUrl.isNotEmpty)
+                  ? Image.network(
+                      currentPhotoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _avatarFallback(),
+                    )
+                  : _avatarFallback(),
+            ),
+          ),
+
+          // Upload overlay / loading
+          Positioned.fill(
+            child: ClipOval(
+              child: _isUploadingPhoto
+                  ? Container(
+                      color: Colors.black.withOpacity(0.45),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
+
+          // Camera badge
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: _isUploadingPhoto ? null : _pickAndUploadImage,
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_C.gradStart, _C.gradEnd],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _avatarFallback() {
+    final initials = widget.user.name.isNotEmpty
+        ? widget.user.name.trim()[0].toUpperCase()
+        : '?';
+    return Container(
+      color: _C.primary.withOpacity(0.1),
+      child: Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.w700,
+            color: _C.primary,
+          ),
+        ),
       ),
     );
   }
@@ -164,6 +362,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          // ── Avatar ──
+          const SizedBox(height: 8),
+          _buildAvatar(),
+          const SizedBox(height: 6),
+          const Center(
+            child: Text(
+              'Tap the camera icon to change photo',
+              style: TextStyle(fontSize: 12, color: _C.textLight),
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // ── Name ──
           _SectionLabel(label: 'Display Name'),
           const SizedBox(height: 8),
@@ -411,7 +621,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter categories based on search
     final filtered = _search.isEmpty
         ? AppSkills.byCategory
         : {
@@ -434,7 +643,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
       ),
       child: Column(
         children: [
-          // Handle
           const SizedBox(height: 12),
           Container(
             width: 40,
@@ -445,8 +653,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Title + Done button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -493,8 +699,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
             ),
           ),
           const SizedBox(height: 14),
-
-          // Search bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
@@ -525,8 +729,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
           ),
           const SizedBox(height: 14),
           const Divider(color: _C.divider, height: 1),
-
-          // Skills list
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 30),
@@ -534,7 +736,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Category header
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 10),
                       child: Text(
@@ -547,7 +748,6 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                         ),
                       ),
                     ),
-                    // Skills wrap
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -601,7 +801,7 @@ class _SectionLabel extends StatelessWidget {
   final String label;
   const _SectionLabel({required this.label});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContextcontext) {
     return Text(
       label,
       style: const TextStyle(

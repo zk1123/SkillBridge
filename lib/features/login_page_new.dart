@@ -6,6 +6,7 @@ import 'bottomnavbar.dart';
 import '../services/auth_service.dart';
 import '../config/admin_config.dart';
 import 'admin/admin_page.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -395,7 +396,12 @@ class _LoginPageState extends State<LoginPage>
                               ),
                               const Spacer(),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ForgotPasswordPage(),
+                                  ),
+                                ),
                                 child: const Text(
                                   'Forgot password?',
                                   style: TextStyle(

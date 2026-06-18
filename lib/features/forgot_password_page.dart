@@ -1,26 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'app_bar.dart';
-import 'register_page.dart';
-import 'bottomnavbar.dart';
-import 'forgot_password_page.dart';
-import '../services/auth_service.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class ForgotPasswordPage extends StatefulWidget {
+  const ForgotPasswordPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
+class _ForgotPasswordPageState extends State<ForgotPasswordPage>
     with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _rememberMe = false;
   bool _isLoading = false;
-  final _authService = AuthService();
+  bool _emailSent = false;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -45,17 +37,15 @@ class _LoginPageState extends State<LoginPage>
   void dispose() {
     _animController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _sendResetEmail() async {
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('Please enter your email address.')),
       );
       return;
     }
@@ -63,26 +53,25 @@ class _LoginPageState extends State<LoginPage>
     setState(() => _isLoading = true);
 
     try {
-      await _authService.signIn(email: email, password: password);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (!mounted) return;
+      setState(() => _emailSent = true);
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       String message;
       switch (e.code) {
         case 'user-not-found':
           message = 'No account found with this email.';
           break;
-        case 'wrong-password':
-          message = 'Incorrect password.';
-          break;
         case 'invalid-email':
-          message = 'Invalid email address.';
+          message = 'Please enter a valid email address.';
           break;
-        case 'user-disabled':
-          message = 'This account has been disabled.';
+        case 'too-many-requests':
+          message = 'Too many attempts. Please wait a moment and try again.';
           break;
         default:
-          message = 'Login failed. Please try again.';
+          message = 'Something went wrong. Please try again.';
       }
-      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -122,11 +111,19 @@ class _LoginPageState extends State<LoginPage>
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -178,7 +175,7 @@ class _LoginPageState extends State<LoginPage>
                             children: [
                               const SizedBox(height: 20),
                               const Text(
-                                'Welcome',
+                                'Reset Your',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 36,
@@ -187,7 +184,7 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                               const Text(
-                                'Back!',
+                                'Password',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 36,
@@ -196,7 +193,7 @@ class _LoginPageState extends State<LoginPage>
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Log in to continue your\njourney with experts\naround the world.',
+                                'Enter your email and we\'ll\nsend you a link to get\nback into your account.',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.85),
                                   fontSize: 14,
@@ -206,7 +203,7 @@ class _LoginPageState extends State<LoginPage>
                             ],
                           ),
                         ),
-                        // 3D style illustration
+                        // Illustration
                         Container(
                           width: 140,
                           height: 160,
@@ -249,7 +246,7 @@ class _LoginPageState extends State<LoginPage>
                                   ),
                                 ),
                                 child: const Icon(
-                                  Icons.lock_outline,
+                                  Icons.mail_outline,
                                   color: Colors.white,
                                   size: 40,
                                 ),
@@ -299,158 +296,9 @@ class _LoginPageState extends State<LoginPage>
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Email
-                          const Text(
-                            'Email',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            controller: _emailController,
-                            hint: 'example@gmail.com',
-                            prefixIcon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                          const SizedBox(height: 18),
-
-                          // Password
-                          const Text(
-                            'Password',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            controller: _passwordController,
-                            hint: '••••••••',
-                            prefixIcon: Icons.lock_outline,
-                            obscure: _obscurePassword,
-                            onToggle: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-
-                          // Remember me + Forgot
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _rememberMe = !_rememberMe),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        gradient: _rememberMe
-                                            ? const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF00C9A7),
-                                                  Color(0xFF4A6CF7),
-                                                ],
-                                              )
-                                            : null,
-                                        border: Border.all(
-                                          color: _rememberMe
-                                              ? Colors.transparent
-                                              : Colors.grey[400]!,
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: _rememberMe
-                                          ? const Icon(
-                                              Icons.check,
-                                              color: Colors.white,
-                                              size: 14,
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      'Remember me',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ForgotPasswordPage(),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Forgot password?',
-                                  style: TextStyle(
-                                    color: Color(0xFF4A6CF7),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Login Button
-                          _buildGradientButton(
-                            label: 'Login',
-                            isLoading: _isLoading,
-                            onTap: _isLoading ? null : _login,
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Register link
-                          Center(
-                            child: GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterPage(),
-                                ),
-                              ),
-                              child: RichText(
-                                text: const TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: "Don't have an account? ",
-                                      style: TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: 'Register Now',
-                                      style: TextStyle(
-                                        color: Color(0xFF4A6CF7),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: _emailSent
+                          ? _buildSuccessState()
+                          : _buildFormState(),
                     ),
                     const SizedBox(height: 20),
 
@@ -504,46 +352,146 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData prefixIcon,
-    bool obscure = false,
-    VoidCallback? onToggle,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[200]!, width: 1.5),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: Icon(prefixIcon, color: Colors.grey, size: 20),
-          suffixIcon: onToggle != null
-              ? IconButton(
-                  icon: Icon(
-                    obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
-                  onPressed: onToggle,
-                )
-              : const Icon(Icons.check, color: Color(0xFF00C9A7), size: 20),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+  Widget _buildFormState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Email',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.black87,
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey[200]!, width: 1.5),
+          ),
+          child: TextField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              hintText: 'example@gmail.com',
+              hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+              prefixIcon: Icon(
+                Icons.email_outlined,
+                color: Colors.grey,
+                size: 20,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildGradientButton(
+          label: 'Send Reset Link',
+          isLoading: _isLoading,
+          onTap: _isLoading ? null : _sendResetEmail,
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: RichText(
+              text: const TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Remembered it? ',
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                  TextSpan(
+                    text: 'Back to Login',
+                    style: TextStyle(
+                      color: Color(0xFF4A6CF7),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessState() {
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00C9A7), Color(0xFF4A6CF7)],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4A6CF7).withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.mark_email_read_outlined,
+            color: Colors.white,
+            size: 30,
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Check your inbox',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'We sent a password reset link to\n${_emailController.text.trim()}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.black54,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildGradientButton(
+          label: 'Back to Login',
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _emailSent = false;
+              _emailController.clear();
+            }),
+            child: const Text(
+              'Try a different email',
+              style: TextStyle(
+                color: Color(0xFF4A6CF7),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 

@@ -8,6 +8,13 @@ import '../models/session_model.dart';
 import 'profile_view_page.dart';
 import 'voice_call_page.dart';
 import 'report_sheet.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart'; // Required for kIsWeb
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+
+const _cloudinaryCloudName = 'dbca70ldz';
+const _cloudinaryUploadPreset = 'SkillBridgeUploads';
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORS
@@ -90,6 +97,11 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final String _currentUid = FirebaseAuth.instance.currentUser!.uid;
+  final TextEditingController _msgCtrl = TextEditingController();
+  final ScrollController _scrollCtrl = ScrollController();
+
+  // ADD THIS LINE:
+  bool _isUploadingMedia = false;
 
   // ── Messaging ────────────────────────────────────────────────────
 
@@ -128,6 +140,142 @@ class _ChatPageState extends State<ChatPage> {
         );
       }
     });
+  }
+
+  // Displays the option to pick an image or a PDF
+  void _showAttachmentMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _C.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.image_outlined, color: _C.primary),
+              title: const Text('Send Image'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendFile(FileType.image);
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.picture_as_pdf_outlined,
+                color: _C.danger,
+              ),
+              title: const Text('Send PDF Document'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendFile(FileType.custom, allowedExtensions: ['pdf']);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Handles cross-platform picking and dynamic Cloudinary routing (raw vs image)
+  Future<void> _pickAndSendFile(
+    FileType type, {
+    List<String>? allowedExtensions,
+  }) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: type,
+      allowedExtensions: allowedExtensions,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+
+    setState(() => _isUploadingMedia = true);
+
+    try {
+      final isPdf = file.extension == 'pdf';
+      final resourceType = isPdf ? 'raw' : 'image';
+
+      final uri = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$_cloudinaryCloudName/$resourceType/upload',
+      );
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['upload_preset'] = _cloudinaryUploadPreset;
+
+      if (kIsWeb || file.bytes != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: file.name,
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath('file', file.path!),
+        );
+      }
+
+      final response = await request.send();
+      if (response.statusCode != 200) throw Exception('Upload failed');
+
+      final body = await response.stream.bytesToString();
+      final json = jsonDecode(body);
+      final secureUrl = json['secure_url'] as String;
+
+      // 1. Add the new attachment message document
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .collection('messages')
+          .add({
+            'senderId': _currentUid,
+            'text': isPdf
+                ? 'Sent a document: ${file.name}'
+                : 'Sent an image attachment',
+            'sentAt': FieldValue.serverTimestamp(),
+            'type': isPdf ? 'pdf' : 'image',
+            'mediaUrl': secureUrl,
+            'fileName': file.name,
+          });
+
+      // 2. Update the parent conversation model (Corrected field name to 'lastMessageAt')
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .update({
+            'lastMessage': isPdf ? '📄 ${file.name}' : '📷 Photo attachment',
+            'lastMessageAt': FieldValue.serverTimestamp(),
+          });
+
+      // 3. Force scroll window to animate downwards once the UI updates
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isUploadingMedia = false);
+    }
+  }
+
+  // Opens the PDF url in an external tab/app
+  Future<void> _openPdfUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   // ── Session actions ──────────────────────────────────────────────
@@ -543,8 +691,17 @@ class _ChatPageState extends State<ChatPage> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.attach_file, color: _C.textMid),
-                    onPressed: () {},
+                    icon: _isUploadingMedia
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _C.primary,
+                            ),
+                          )
+                        : const Icon(Icons.attach_file, color: _C.textMid),
+                    onPressed: _isUploadingMedia ? null : _showAttachmentMenu,
                   ),
                   Expanded(
                     child: TextField(
@@ -594,100 +751,186 @@ class _ChatPageState extends State<ChatPage> {
 
   // ── Message bubble (unchanged) ───────────────────────────────────
 
-  Widget _buildMessageBubble(MessageModel msg) {
-    final bool isMe = msg.senderId == _currentUid;
-    final time = msg.sentAt.toDate();
-    final timeStr =
-        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  // Widget _buildMessageBubble(MessageModel msg) {
+  //   final bool isMe = msg.senderId == _currentUid;
+  //   final time = msg.sentAt.toDate();
+  //   final timeStr =
+  //       '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isMe) ...[
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: _C.primaryLight,
-              child: widget.profilePicUrl.isNotEmpty
-                  ? ClipOval(
-                      child: Image.network(
-                        widget.profilePicUrl,
-                        width: 28,
-                        height: 28,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Text(
-                          widget.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: _C.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Text(
-                      widget.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: _C.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ),
-            const SizedBox(width: 6),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isMe ? _C.primary : _C.surface,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: isMe
-                      ? const Radius.circular(16)
-                      : const Radius.circular(4),
-                  bottomRight: isMe
-                      ? const Radius.circular(4)
-                      : const Radius.circular(16),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    msg.text,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : _C.textDark,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    timeStr,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isMe
-                          ? Colors.white.withOpacity(0.7)
-                          : _C.textLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  //   return Padding(
+  //     padding: const EdgeInsets.only(bottom: 8),
+  //     child: Row(
+  //       mainAxisAlignment: isMe
+  //           ? MainAxisAlignment.end
+  //           : MainAxisAlignment.start,
+  //       crossAxisAlignment: CrossAxisAlignment.end,
+  //       children: [
+  //         if (!isMe) ...[
+  //           CircleAvatar(
+  //             radius: 14,
+  //             backgroundColor: _C.primaryLight,
+  //             child: widget.profilePicUrl.isNotEmpty
+  //                 ? ClipOval(
+  //                     child: Image.network(
+  //                       widget.profilePicUrl,
+  //                       width: 28,
+  //                       height: 28,
+  //                       fit: BoxFit.cover,
+  //                       errorBuilder: (_, __, ___) => Text(
+  //                         widget.name[0].toUpperCase(),
+  //                         style: const TextStyle(
+  //                           fontSize: 10,
+  //                           color: _C.primary,
+  //                           fontWeight: FontWeight.bold,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   )
+  //                 : Text(
+  //                     widget.name[0].toUpperCase(),
+  //                     style: const TextStyle(
+  //                       fontSize: 10,
+  //                       color: _C.primary,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //           ),
+  //           const SizedBox(width: 6),
+  //         ],
+  //         Flexible(
+  //           child: Container(
+  //             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+  //             decoration: BoxDecoration(
+  //               color: isMe ? _C.primary : _C.surface,
+  //               borderRadius: BorderRadius.only(
+  //                 topLeft: const Radius.circular(16),
+  //                 topRight: const Radius.circular(16),
+  //                 bottomLeft: isMe
+  //                     ? const Radius.circular(16)
+  //                     : const Radius.circular(4),
+  //                 bottomRight: isMe
+  //                     ? const Radius.circular(4)
+  //                     : const Radius.circular(16),
+  //               ),
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: Colors.black.withOpacity(0.05),
+  //                   blurRadius: 4,
+  //                   offset: const Offset(0, 2),
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.end,
+  //               children: [
+  //                 Text(
+  //                   msg.text,
+  //                   style: TextStyle(
+  //                     color: isMe ? Colors.white : _C.textDark,
+  //                     fontSize: 14,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 4),
+  //                 Text(
+  //                   timeStr,
+  //                   style: TextStyle(
+  //                     fontSize: 10,
+  //                     color: isMe
+  //                         ? Colors.white.withOpacity(0.7)
+  //                         : _C.textLight,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  Widget _buildMessageBubble(MessageModel msg) {
+    final String senderId = msg.senderId ?? '';
+    final String text = msg.text ?? '';
+    final String type = msg.type ?? 'text';
+    final String? mediaUrl = msg.mediaUrl;
+    final String? fileName = msg.fileName;
+
+    final bool isMe = senderId == _currentUid;
+
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
+        ),
+        decoration: BoxDecoration(
+          color: isMe
+              ? _C.primary
+              : (type == 'image' || type == 'pdf' || type == 'file'
+                    ? Colors.grey[200]
+                    : _C.primaryLight.withOpacity(0.4)),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMe ? 16 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
-        ],
+        ),
+        // FIXED CHECK: This now checks for 'pdf' OR 'file' type strings natively
+        child: type == 'image' && mediaUrl != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(mediaUrl, fit: BoxFit.cover),
+              )
+            : (type == 'pdf' || type == 'file') && mediaUrl != null
+            ? GestureDetector(
+                onTap: () => _openPdfUrl(mediaUrl),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.picture_as_pdf,
+                      color: Colors.red,
+                      size: 32,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fileName ?? 'Document.pdf',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const Text(
+                            'Tap to view document',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Text(
+                text,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isMe ? Colors.white : _C.textDark,
+                ),
+              ),
       ),
     );
   }
